@@ -6,7 +6,7 @@
  * Date: 		20/12/2017
  *----------------------------------------------------------------------------*/
 
-
+// This is a test for the git repository and Atom intercommunciations
 #include "Main.h"
 
 // DEFINES
