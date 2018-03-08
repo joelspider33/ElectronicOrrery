@@ -18,6 +18,8 @@
 // I2C Interface Setup
 I2C i2c(PTE25,PTE24);			// 100KHz default
 Serial pc(USBTX,USBRX);
+InterruptIn button(SW2);
+char button_flag = 0;
 
 DigitalOut rled(LED1);
 DigitalOut gled(LED2);
@@ -58,11 +60,16 @@ void (*Menu[]) (void) =	{
  Menu_ChangeAngle					// 6
 };
 
+void buttonISR(void){
+	button_flag = 1;
+}
+
 /*----------------------------------------------------------------------------
   Main function
  *----------------------------------------------------------------------------*/
 int main (void) {
 	errorLED(0);
+	button.rise(&buttonISR);
 	// Initialisation
 	lcdReset();								// LCD Display Setup
 	char bytearray[33];		// Angle array
@@ -72,15 +79,24 @@ int main (void) {
 
 	unsigned char state = 0;
 	Menu_StartScreen();
-	lcdPrintString(120,280,"###### Test ######",arial_14pt,Black,1);
   while (1) {
 
 		/*	MENU STRUCTURE
 		During Menu Displays where user input will directly take you to another state, the MCU can poll Internet Module for information
 		During Menu Displays where user input is interpreted such as Menu_ChangeAngle, Menu_ChangeDate and Wifi_Settings then polling is post-poned.
 		*/
-
+		errorLED(1);
 		sleep();
+
+
+		if (button_flag){
+			pc.printf("Sending I2C Commands:\n");
+			I2CSendAngles((char*)bytearray);
+			pc.printf("Success!\n");
+			errorLED(2);
+		}
+
+
 		// If a touch event is detected then call stateChange() function and if change occurs then update
 		if(pos.flag){
 			pos.flag = 0;
