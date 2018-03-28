@@ -50,24 +50,20 @@ void errorLED(int x){
 }
 
 
-
 /*----------------------------------------------------------------------------
   Main function
  *----------------------------------------------------------------------------*/
 int main (void) {
-	pc.printf("Begin Main: ");
 	// Initialisation
 	errorLED(0);
 	lcdReset();														// LCD Display Setup
 	calibration();												// Allows user to Calibrate Touchscreen
 	// Initialise Main Variables
-	struct planet PlanetArray[8];	// Contains lon,lat and distance(r)
-	int date[5] = {2000,1,1,0,0};						// YY,MM,DD,hh,mm
+	struct planet PlanetArray[8];					// Contains lon,lat and distance(r)
+	int date[5] = {2000,1,1,0,0};					// YY,MM,DD,hh,mm
 	init(PlanetArray);										// Set all variables to default values
-	pc.printf("Initialisation Complete\n");
 
   while (1) {
-		pc.printf("Start Main Loop\n");
 		Menu_DrawMainMenu();
 		sleepUntilTouch();
 		if(isTouchInside(20,220,50,90)){
@@ -95,7 +91,8 @@ void DateSelection(struct planet PlanetArray[8], int date[5]){
 	while(!isTouchInside(0,50,0,30)){
 		if(isTouchInside(50,170,20,90)){
 			ChangeDate(date);
-			getPlanetPos(PlanetArray,date[0],date[1],date[2],(float)date[4] + (date[5]/24.0));
+			double time = (double)(date[4]) + ((double)(date[5])/24.0);
+			getPlanetPos(PlanetArray,date[0],date[1],date[2],time);
 			Menu_DrawDateSelection(PlanetArray,date);
 		} else if(isTouchInside(180,220,50,90)){
 			float angles[8];
@@ -146,7 +143,7 @@ void ChangeDate(int date[5]){
         ptr = &str[0];
         int dateTemp[5];  // [YY,MM,DD,hh,mm]
         for(int i=0; i<5; i++){
-					  dateTemp[i] = strtol(ptr,&ptr,10);		// Store Year
+					dateTemp[i] = strtol(ptr,&ptr,10);		// Store Date String as ints
           ptr++;
         }
 				if(checkDate(dateTemp)){
@@ -237,7 +234,6 @@ void sleepUntilTouch(){
 	while(pos.flag==0){
 		sleep();
 	}
-	pc.printf("Touch Position: X = %i , Y = %i\n",pos.x,pos.y);
 }
 
 bool isTouchInside(int x1,int x2,int y1,int y2){

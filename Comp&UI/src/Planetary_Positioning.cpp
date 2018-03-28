@@ -8,6 +8,7 @@
 
 #include "Planetary_Positioning.h"
 #include "Math.h"
+#include "mbed.h"
 
 #define PI          3.14159265358979323846
 #define RADEG       (180.0/PI)
@@ -62,7 +63,7 @@ void computeOrbitalElements(double d, struct orbital_elements OrbitArray[8]){
 	OrbitArray[1].e = 0.006773 - 1.302E-9 * d;
 	OrbitArray[1].M = rev(48.0052 + 1.6021302244 * d);
 
-	// Sun/Earth (Refer to word document explaining algoithm for explanation)
+	// Sun/-Earth (Refer to word document explaining algoithm for explanation)
 	OrbitArray[2].N = 0.0;
 	OrbitArray[2].i = 0.0;
 	OrbitArray[2].w = rev(282.9404 + 4.70935E-5 * d);
@@ -152,6 +153,7 @@ void planetsPosCalc(struct orbital_elements OrbitArray[8], struct planet PlanetA
 			// Convert to Longitude, Latitude and Distance
 			planet.lat = asind(zeclip/planet.r);
 			planet.lon = rev(atan2d(yeclip,xeclip));
+			PlanetArray[i] = planet;
 		}
 	}
 
@@ -184,6 +186,10 @@ void planetsPosCalc(struct orbital_elements OrbitArray[8], struct planet PlanetA
 	+0.040 * sind(Saturn.M - 2*Uranus.M + 6)
 	+0.035 * sind(Saturn.M - 3*Uranus.M + 33)
 	-0.015 * sind(Jupiter.M - Uranus.M + 20);
+
+ 	OrbitArray[4] = Jupiter;
+	OrbitArray[5] = Saturn;
+	OrbitArray[6] = Uranus;
 
 	return;
 }
