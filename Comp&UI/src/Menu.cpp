@@ -7,191 +7,188 @@
  *----------------------------------------------------------------------------*/
 
 #include "Menu.h"
+#include "lcd.h"
+#include "stdint.h"
+#include "Planetary_Positioning.h"
 
 
+void Menu_DrawMainMenu(void){
+  lcdClear();
+  Menu_Topbar();
+  lcdPrintString(120,15,"Electronic Orrery",arial_14pt,White,1);	// Title
+  lcdDrawRect(20,50,220,90,DarkGreen,1);													// Option 1 - Select Date
+  lcdPrintString(120,70,"Select Date",arial_14pt,White,1);
+  lcdDrawRect(20,100,220,140,DarkGreen,1);												// Option 2 - Engineering Mode
+  lcdPrintString(120,120,"Engineering Mode",arial_14pt,White,1);
+  lcdDrawRect(20,150,220,190,DarkGreen,1);												// Option 3 - Wifi Settings
+  lcdPrintString(120,170,"Wifi Settings",arial_14pt,White,1);
+  lcdDrawRect(20,200,220,240,DarkGreen,1);												// Option 4 - Settings
+  lcdPrintString(120,220,"Settings",arial_14pt,White,1);
+}
 
- uint8_t stateChange(uint8_t state){
- 	/*	STATES
- 	0 - Main Menu
- 	1 - Date Selection
- 	2 - Engineering Mode
- 	3 - Wifi Settings
- 	4 - Settings
- 	5 - Change Date
- 	6 - Change Angle
- 	*/
- 	switch (state){
- 		case 0:	// Main menu
- 			if			(pos.x>20 && pos.x<220 && pos.y>50  && pos.y<90) 	{			state = 1;			}		// Time&Date Selection Button
- 			else if (pos.x>20 && pos.x<220 && pos.y>100 && pos.y<140)	{			state = 2;			}		// Engineering Mode Button
- 			else if (pos.x>20 && pos.x<220 && pos.y>150 && pos.y<190)	{			state = 3;			}		// Wifi Settings Button
- 			else if (pos.x>20 && pos.x<220 && pos.y>200 && pos.y<240)	{			state = 4;			}		// Settings Button
- 			break;
- 		case 1:	// Date selection
- 			if			(pos.x>0 && pos.x<50 && pos.y>0 && pos.y<30)			{			state = 0;			}	// Back Button
- 			else if	(pos.x>20 && pos.x<220 && pos.y>50 && pos.y<90)		{			state = 5;			}	// Change Date selection (Busy State)
- 			break;
- 		case 2:	// Engineering Mode
- 			if			(pos.x>0 && pos.x<50 && pos.y>0 && pos.y<30)			{			state = 0;			} // Back Button
- 			else if (pos.x>125 && pos.x<225 && pos.y>50 && pos.y<260)	{			state = 6;			}	// Change Angle Button (Busy State)
- 			break;
- 		case 3:	// Wifi Settings
- 			if			(pos.x>0 && pos.x<50 && pos.y>0 && pos.y<30)			{			state = 0;			}	// Back Button
- 			break;
- 		case 4:	// Settings
- 			if			(pos.x>0 && pos.x<50 && pos.y>0 && pos.y<30)			{			state = 0;			} // Back Button
- 			break;
- 	}
- 	return state;
- }
+void Menu_DrawDateSelection(struct planet PlanetArray[8], int date[5]){
+  lcdClear();
+  Menu_Topbar();
+  Menu_Back();
+  lcdPrintString(120,15,"Date Selection",arial_14pt,White,1);			// Title
+  lcdDrawRect(20,50,170,90,DarkGreen,1);													// Date Box
+  lcdDrawRect(180,50,220,90,DarkGreen,1);													// Set Box
+  lcdPrintString(200,70,"Set",arial_14pt,White,1);                // Set Text
+  lcdDrawRect(20,100,220,300,DarkGrey,1);							  // Planet Stats Box
+  lcdPrintString(45,115,"Planet",arial_14pt,White,1);   // Titles
+  lcdPrintString(95,115,"Long",arial_14pt,White,1);
+  lcdPrintString(145,115,"Lat",arial_14pt,White,1);
+  lcdPrintString(195,115,"Dist",arial_14pt,White,1);
+  lcdPrintString(45,140,"Mercury",arial_10pt,White,1);  // Text
+  lcdPrintString(45,160,"Venus",arial_10pt,White,1);
+  lcdPrintString(45,180,"Earth",arial_10pt,White,1);
+  lcdPrintString(45,200,"Mars",arial_10pt,White,1);
+  lcdPrintString(45,220,"Jupiter",arial_10pt,White,1);
+  lcdPrintString(45,240,"Saturn",arial_10pt,White,1);
+  lcdPrintString(45,260,"Uranus",arial_10pt,White,1);
+  lcdPrintString(45,280,"Neptune",arial_10pt,White,1);
 
- // State 0
- void Menu_StartScreen(){
- 	lcdClear();
- 	Menu_Topbar();
- 	lcdPrintString(120,5,"Electronic Orrery",arial_14pt,Black,1);	// Title
- 	lcdDrawRect(20,50,220,90,Green,1);													// Option 1 - Select Date
- 	lcdPrintString(120,62,"Select Date",arial_14pt,Black,1);
- 	lcdDrawRect(20,100,220,140,Green,1);												// Option 2 - Engineering Mode
- 	lcdPrintString(120,112,"Engineering Mode",arial_14pt,Black,1);
- 	lcdDrawRect(20,150,220,190,Green,1);												// Option 3 - Wifi Settings
- 	lcdPrintString(120,165,"Wifi Settings",arial_14pt,Black,1);
- 	lcdDrawRect(20,200,220,240,Green,1);												// Option 4 - Settings
- 	lcdPrintString(120,212,"Settings",arial_14pt,Black,1);
- }
+  // Print date
+  char buffer[16];
+  sprintf(buffer,"%04i/%02i/%02i %02i:%02i",date[0],date[1],date[2],date[3],date[4]);
+  lcdPrintString(95,70,buffer,arial_10pt,White,1);
 
- // State 1
- void Menu_SelectDate(){
+  // Print Planet Position Values
+  for(int i=0; i<8; i++){
+    char temp[6];
+    sprintf(temp,"%.1f",PlanetArray[i].lon);
+    lcdPrintString(95,140+i*20,temp,arial_10pt,White,1);
+    sprintf(temp,"%.1f",PlanetArray[i].lat);
+    lcdPrintString(145,140+i*20,temp,arial_10pt,White,1);
+    sprintf(temp,"%.1f",PlanetArray[i].r);
+    lcdPrintString(195,140+i*20,temp,arial_10pt,White,1);
+  }
+}
+
+/*
+void Menu_EngineeringMode(void){
+  char loop = 1;
+  while(1){
+   	lcdClear();
+   	Menu_Topbar();
+   	Menu_Back();
+   	lcdPrintString(130,15,"Engineering Mode",arial_14pt,White,1);		// Title
+   	lcdDrawRect(20,50,115,260,DarkGrey,1);											    // Planet Box
+   	lcdDrawRect(125,50,220,260,DarkGreen,1);												// Angle Box
+   	lcdDrawRect(20,270,115,310,DarkGreen,1);												// Demo Mode Button
+    lcdDrawRect(125,270,220,310,DarkGreen,1);                       // Set Angle button
+   	lcdPrintString(70,75,"Planet",arial_14pt,White,1);              // Titles
+    lcdPrintString(170,75,"Angle",arial_14pt,White,1);
+   	lcdPrintString(70,110,"Mercury",arial_10pt,White,1);
+   	lcdPrintString(70,130,"Venus",arial_10pt,White,1);
+   	lcdPrintString(70,150,"Earth",arial_10pt,White,1);
+   	lcdPrintString(70,170,"Mars",arial_10pt,White,1);
+   	lcdPrintString(70,190,"Jupiter",arial_10pt,White,1);
+   	lcdPrintString(70,210,"Saturn",arial_10pt,White,1);
+   	lcdPrintString(70,230,"Uranus",arial_10pt,White,1);
+   	lcdPrintString(70,250,"Neptune",arial_10pt,White,1);
+   	lcdPrintString(65,290,"Demo Mode",arial_14pt,White,1);
+    lcdPrintString(175,290,"Set Angle",arial_14pt,White,1);
+
+    float engineeringModeAngles[8];
+    for(uint8_t i=0; i<8; i++){
+      engineeringModeAngles[i] = setAngles[i];
+    }
+
+    while(loop){
+      pos.flag = 0;
+      sleep();
+      if (pos.flag){
+        pos.flag = 0;
+        if (pos.x>0 && pos.x<50 && pos.y>0  && pos.y<30){ // Back Button
+          return;
+        } else if (pos.x>20 && pos.x<115 && pos.y>270 && pos.y<310){	// Demo Mode Button
+          loop = 0;
+          Menu_SetDemoMode();
+        } else if (pos.x>125 && pos.x<220 && pos.y>270 && pos.y<310){ // Set Button
+          loop = 0;
+          for (uint8_t i=0; i<8; i++){
+            setAngles[i] = engineeringModeAngles[i];
+          }
+          Menu_SetAngles(engineeringModeAngles);
+        } else if (pos.x>125 && pos.x<220 && pos.y>100 && pos.y<260){
+          loop = 0;
+          if (pos.y>100 && pos.y<120){
+            engineeringModeAngles[0] = Menu_ChangeAngle(Mercury);
+          } else if (pos.y>120 && pos.y<140){
+            engineeringModeAngles[1] = Menu_ChangeAngle(Venus);
+          } else if (pos.y>140 && pos.y<160){
+            engineeringModeAngles[2] = Menu_ChangeAngle(Earth);
+          } else if (pos.y>160 && pos.y<180){
+            engineeringModeAngles[3] = Menu_ChangeAngle(Mars);
+          } else if (pos.y>180 && pos.y<200){
+            engineeringModeAngles[4] = Menu_ChangeAngle(Jupiter);
+          } else if (pos.y>200 && pos.y<220){
+            engineeringModeAngles[5] = Menu_ChangeAngle(Saturn);
+          } else if (pos.y>220 && pos.y<240){
+            engineeringModeAngles[6] = Menu_ChangeAngle(Uranus);
+          } else if (pos.y>240 && pos.y<260){
+            engineeringModeAngles[7] = Menu_ChangeAngle(Neptune);
+          }
+        }
+      }
+    }
+    loop = 1;
+  }
+}*/
+
+void Menu_RemoteServerControl(void){
+
+}
+
+void Menu_Settings(void){
+  char loop = 1;
+  while(1){
+   	lcdClear();
+   	Menu_Topbar();
+   	Menu_Back();
+   	lcdPrintString(140,15,"Settings",arial_14pt,White,1);		// Title
+   	lcdDrawRect(20,50,220,90,DarkGreen,1);								  // Calibration Button
+   	lcdPrintString(120,70,"Calibrate",arial_14pt,White,1);   // Titles
+
+    while(loop){
+      pos.flag = 0;
+      sleep();
+      if (pos.flag){
+        pos.flag = 0;
+        if (pos.x>0 && pos.x<50 && pos.y>0  && pos.y<30){ // Back Button
+          return;
+        } else if (pos.x>20 && pos.x<220 && pos.y>50 && pos.y<90){	// Calibration Button
+          loop = 0;
+          calibration();
+        }
+      }
+    }
+    loop = 1;
+  }
+}
+
+void Menu_DrawChangeDate(void){
  	lcdClear();
  	Menu_Topbar();
  	Menu_Back();
- 	lcdPrintString(50,5,"Date Selection",arial_14pt,Black,0);			// Title
- 	lcdDrawRect(20,50,220,90,Green,1);													// Date Box
- 	lcdDrawRect(20,100,220,300,LightGrey,1);										// Planet Stats Box
- 	lcdPrintString(25,145,"Planet   Long    Lat   Dist",arial_10pt,Black,0);
- 	lcdPrintString(25,155,"Mercury",arial_10pt,Black,0);					// Text
- 	lcdPrintString(25,165,"Venus",arial_10pt,Black,0);
- 	lcdPrintString(25,175,"Earth",arial_10pt,Black,0);
- 	lcdPrintString(25,185,"Mars",arial_10pt,Black,0);
- 	lcdPrintString(25,195,"Jupiter",arial_10pt,Black,0);
- 	lcdPrintString(25,205,"Saturn",arial_10pt,Black,0);
- 	lcdPrintString(25,215,"Uranus",arial_10pt,Black,0);
- 	lcdPrintString(25,225,"Neptune",arial_10pt,Black,0);
- }
-
- // State 2
- void Menu_EngineeringMode(){
- 	lcdClear();
- 	Menu_Topbar();
- 	Menu_Back();
- 	lcdPrintString(40,5,"Engineering Mode",arial_14pt,Black,0);		// Title
- 	lcdDrawRect(20,50,115,260,LightGrey,1);											// Planet Box
- 	lcdDrawRect(125,50,220,260,Green,1);												// Angle Box
- 	lcdDrawRect(20,270,220,310,Green,1);												// Demo Mode Button
- 	lcdPrintString(25,60,"Planet",arial_14pt,Black,0);
- 	lcdPrintString(25,80,"Mercury",arial_10pt,Black,0);						// Text
- 	lcdPrintString(25,100,"Venus",arial_10pt,Black,0);
- 	lcdPrintString(25,120,"Earth",arial_10pt,Black,0);
- 	lcdPrintString(25,140,"Mars",arial_10pt,Black,0);
- 	lcdPrintString(25,160,"Jupiter",arial_10pt,Black,0);
- 	lcdPrintString(25,180,"Saturn",arial_10pt,Black,0);
- 	lcdPrintString(25,200,"Uranus",arial_10pt,Black,0);
- 	lcdPrintString(25,220,"Neptune",arial_10pt,Black,0);
-
- 	lcdPrintString(80,280,"Demo Mode",arial_14pt,Black,0);
- }
-
- // State 3
- void Menu_WifiSettings(){
-
- }
-
- // State 4
- void Menu_Settings(){
-
- }
-
- // State 5
- void Menu_ChangeDate(){
- 	lcdClear();
- 	Menu_Topbar();
- 	Menu_Back();
- 	lcdPrintString(50,5,"Change Date",arial_14pt,Black,0);		// Title
+ 	lcdPrintString(120,15,"Change Date",arial_14pt,White,1);		// Title
  	Menu_Numpad();
- 	uint8_t datenum = 0;
- 	uint8_t loop = 1;
- 	char dateFormat[] = "YYYY/MM/DD hh:mm";
- 	char str[] = "_YYY/MM/DD hh:mm";
- 	while(loop){
- 		sleep();
- 		if(pos.flag){
- 			pos.flag = 0;
- 			if(pos.x>20 && pos.x<80){
- 				if			(pos.y>100 && pos.y<140){	str[datenum] = 7;	}
- 				else if	(pos.y>150 && pos.y<190){	str[datenum] = 4;	}
- 				else if (pos.y>200 && pos.y<240){	str[datenum] = 1;	}
- 				else if (pos.y>250 && pos.y<300){
- 					str[datenum] = dateFormat[datenum];
- 					if(datenum == 5 || datenum == 8 || datenum == 11 || datenum == 14){
- 						datenum-=2;
- 					} else{
- 						datenum--;
- 					}
- 					str[datenum] = '_';
- 				}
- 			}
- 			if(pos.x>90 && pos.x<150){
- 				if			(pos.y>100 && pos.y<140){	str[datenum] = 8;	}
- 				else if	(pos.y>150 && pos.y<190){	str[datenum] = 5;	}
- 				else if (pos.y>200 && pos.y<240){	str[datenum] = 2;	}
- 				else if (pos.y>250 && pos.y<300){	str[datenum] = 0;	}
- 			}
- 			if(pos.x>160 && pos.x<220){
- 				if			(pos.y>100 && pos.y<140){	str[datenum] = 9;	}
- 				else if	(pos.y>150 && pos.y<190){	str[datenum] = 6;	}
- 				else if (pos.y>200 && pos.y<240){	str[datenum] = 3;	}
- 				else if (pos.y>250 && pos.y<300){
- 					if(datenum == 15){	// Complete Date
- 						char* endptr;
- 						int YY = strtol(str,&endptr,10);		// Store Year
- 						int MM = strtol(endptr,&endptr,10);	// Store Month
- 						int DD = strtol(endptr,&endptr,10);	// Store Day
- 						int hh = strtol(endptr,&endptr,10);	// Store Hour
- 						int mm = strtol(endptr,&endptr,10);	// Store Minute
- 						if(checkDate(YY,MM,DD,hh,mm)){
- 							/* ############## WORKING HERE ############## */
- 						}	else{	// Wrongly Formatted Date
- 							lcdDrawRect(20,35,220,49,White,1);
- 							lcdPrintString(20,35,"NOT VALID DATE",arial_10pt,Red,0);
- 						}
- 					} else{		// Incomplete Date
- 						lcdDrawRect(20,35,220,49,White,1);
- 						lcdPrintString(20,35,"INCOMPLETE DATE",arial_10pt,Red,0);
- 					}
- 				}
- 			}
- 			if(str[datenum]>('0'-1) && str[datenum]<('9'+1)){
- 				if(datenum == 3 || datenum == 6 || datenum == 9 || datenum == 12){
- 					datenum+=2;
- 				} else if(datenum == 15){
- 					// Do nothing if at end
- 				} else{
- 					datenum++;
- 				}
- 			}
- 		}
- 	}
  }
 
- // State 6
- void Menu_ChangeAngle(){
+
+float Menu_ChangeAngle(void){
+  pos.flag = 0;
  	lcdClear();
  	Menu_Topbar();
  	Menu_Back();
- 	lcdPrintString(50,5,"Change Angle",arial_14pt,Black,0);		// Title
+ 	lcdPrintString(50,5,"Change Angle",arial_14pt,White,0);		// Title
  	lcdDrawRect(20,50,220,90,LightGrey,1);									// Date + Time
  	Menu_Numpad();
+  return 1.00;
  }
+
+
 
 
  /* ---------- Bitmaps and Common Drawing Functions ----------*/
@@ -228,53 +225,33 @@
  }
 
  void Menu_Back(){
- 	lcdDrawRect(0,0,50,30,Green,1);
- 	lcdPrintString(5,5,"Back",arial_10pt,White,0);
+ 	lcdDrawRect(0,0,50,30,DarkGreen,1);
+ 	lcdPrintString(25,15,"Back",arial_10pt,White,1);
  }
 
  void Menu_Numpad(void){
- 	lcdDrawRect(20,100,80,140,Green,1);
- 	lcdDrawRect(90,100,150,140,Green,1);
- 	lcdDrawRect(160,100,220,140,Green,1);
- 	lcdDrawRect(20,150,80,190,Green,1);
- 	lcdDrawRect(90,150,150,190,Green,1);
- 	lcdDrawRect(160,150,220,190,Green,1);
- 	lcdDrawRect(20,200,80,240,Green,1);
- 	lcdDrawRect(90,200,150,240,Green,1);
- 	lcdDrawRect(160,200,220,240,Green,1);
- 	lcdDrawRect(20,250,80,300,Green,1);
- 	lcdDrawRect(90,250,150,300,Green,1);
- 	lcdDrawRect(160,250,220,300,Green,1);
- 	lcdPrintChar(50,110,'7',Black,arial_14pt);
- 	lcdPrintChar(120,110,'8',Black,arial_14pt);
- 	lcdPrintChar(190,110,'9',Black,arial_14pt);
- 	lcdPrintChar(50,160,'4',Black,arial_14pt);
- 	lcdPrintChar(120,160,'5',Black,arial_14pt);
- 	lcdPrintChar(190,160,'6',Black,arial_14pt);
- 	lcdPrintChar(50,210,'1',Black,arial_14pt);
- 	lcdPrintChar(120,210,'2',Black,arial_14pt);
- 	lcdPrintChar(190,210,'3',Black,arial_14pt);
- 	lcdPrintString(45,270,"<--",arial_14pt,Black,0);
- 	lcdPrintChar(120,270,'0',Black,arial_14pt);
- 	lcdPrintString(170,270,"Confirm",arial_10pt,Black,0);
- }
-
- // Date checking function
- uint8_t checkDate(int year, int month, int day, int hour, int minute){
- 	if(year>=0 && year<=9999){
- 		if(month>=1 && month<=12){
- 			if		 ((day>0 && day<=31) && (month==1 || month==3 || month==5 || month==7 || month==8 || month==10 || month==12)){}
- 			else if((day>0 && day<=30) && (month==4 || month==6 || month==9 || month==11)){}
- 			else if((day>0 && day<=28) && (month==2)){}
- 			else if( day==29 && month==2 && (year%400==0 ||(year%4==0 && year%100!=0))){}	// Leap years every 4 years but not every 100 years except for every 400 years
- 			else return 0;	// Not a valid date
- 		}else	return 0; // Not a valid month
- 	}else	return 0; // Not a valid year
-
- 	if(hour>=0 && hour<=24){
- 		if(minute>=0 && minute<60){
- 			return 1;		// All conditions met, return success
- 		}
- 	}
- 	return 0; // Not a valid hour
+ 	lcdDrawRect(20,100,80,140,DarkGreen,1);
+ 	lcdDrawRect(90,100,150,140,DarkGreen,1);
+ 	lcdDrawRect(160,100,220,140,DarkGreen,1);
+ 	lcdDrawRect(20,150,80,190,DarkGreen,1);
+ 	lcdDrawRect(90,150,150,190,DarkGreen,1);
+ 	lcdDrawRect(160,150,220,190,DarkGreen,1);
+ 	lcdDrawRect(20,200,80,240,DarkGreen,1);
+ 	lcdDrawRect(90,200,150,240,DarkGreen,1);
+ 	lcdDrawRect(160,200,220,240,DarkGreen,1);
+ 	lcdDrawRect(20,250,80,300,DarkGreen,1);
+ 	lcdDrawRect(90,250,150,300,DarkGreen,1);
+ 	lcdDrawRect(160,250,220,300,DarkGreen,1);
+ 	lcdPrintString(50,120,"7",arial_14pt,White,1);
+ 	lcdPrintString(120,120,"8",arial_14pt,White,1);
+ 	lcdPrintString(190,120,"9",arial_14pt,White,1);
+ 	lcdPrintString(50,170,"4",arial_14pt,White,1);
+ 	lcdPrintString(120,170,"5",arial_14pt,White,1);
+ 	lcdPrintString(190,170,"6",arial_14pt,White,1);
+ 	lcdPrintString(50,220,"1",arial_14pt,White,1);
+ 	lcdPrintString(120,220,"2",arial_14pt,White,1);
+ 	lcdPrintString(190,220,"3",arial_14pt,White,1);
+ 	lcdPrintString(50,275,"<--",arial_14pt,White,1);
+ 	lcdPrintString(120,275,"0",arial_14pt,White,1);
+ 	lcdPrintString(190,275,"Confirm",arial_10pt,White,1);
  }

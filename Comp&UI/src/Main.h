@@ -6,18 +6,13 @@
  * Date: 		18/01/2018
  *----------------------------------------------------------------------------*/
 
-#ifndef MAIN_HEADER_FILE
-#define MAIN_HEADER_FILE
 
-#include <mbed.h>
-#include "Math.h"
-#include "stdint.h"
-#include "stdlib.h"
-#include "string.h"
-#include "lcd.h"
-#include "Planetary_Positioning.h"
-#include "Menu.h"
+void init(struct planet PlanetArray[8]);
+void sleepUntilTouch(void);
+bool isTouchInside(int x1,int x2,int y1,int y2);
 
-uint8_t I2CSendAngles(char *);
-
-#endif
+void DateSelection(struct planet PlanetArray[8],int date[5]);
+void ChangeDate(int date[5]);
+void SetAngles(float *);
+void SetDemoMode(void);
+bool checkDate(int date[5]);  // YY,MM,DD,hh,mm

@@ -6,9 +6,6 @@
  * Date: 		17/01/2017
  *----------------------------------------------------------------------------*/
 
- #ifndef LCD_HEADER_FILE
- #define LCD_HEADER_FILE
-
 #include "mbed.h"
 #include "Arial_10pt.h"
 #include "Arial_14pt.h"
@@ -60,9 +57,9 @@ typedef struct calib {
 }	Calibration_Matrix;
 
 
-
 void setCalibrationMatrix(void);
 COORD applyCalib(void);
+void calibration(void);
 // Credit for accurate calibration functions goes to Carlos E. Vidales, more information can be found at the link below
 // https://www.embedded.com/design/system-integration/4023968/How-To-Calibrate-Touch-Screens
 
@@ -86,8 +83,6 @@ void plotLineLow(int x0, int y0, int x1, int y1, int colour);
 void plotLineHigh(int x0, int y0, int x1, int y1, int colour);
 void lcdDrawRect(int x1, int y1, int x2, int y2, int colour, int fill);
 void lcdDrawCircle(int x0,int y0,int r,int colour,int fill);
-void lcdPrintString(int x, int y,char *string,const FONT_INFO* font, int colour, int position);
+void lcdPrintString(int x, int y,const char *string,const FONT_INFO* font, int colour, int position);
 void lcdPrintChar(int x, int y, char c, int colour, const FONT_INFO* font);
-uint8_t stringPixelLength(char* string, const FONT_INFO* font);
-
- #endif
+uint8_t stringPixelLength(const char* string, const FONT_INFO* font);
