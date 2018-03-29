@@ -39,103 +39,60 @@ void Menu_DrawDateSelection(struct planet PlanetArray[8], int date[5]){
   lcdPrintString(95,115,"Long",arial_14pt,White,1);
   lcdPrintString(145,115,"Lat",arial_14pt,White,1);
   lcdPrintString(195,115,"Dist",arial_14pt,White,1);
-  lcdPrintString(45,140,"Mercury",arial_10pt,White,1);  // Text
-  lcdPrintString(45,160,"Venus",arial_10pt,White,1);
-  lcdPrintString(45,180,"Earth",arial_10pt,White,1);
-  lcdPrintString(45,200,"Mars",arial_10pt,White,1);
-  lcdPrintString(45,220,"Jupiter",arial_10pt,White,1);
-  lcdPrintString(45,240,"Saturn",arial_10pt,White,1);
-  lcdPrintString(45,260,"Uranus",arial_10pt,White,1);
-  lcdPrintString(45,280,"Neptune",arial_10pt,White,1);
-
+  lcdPrintString(95,130,"deg",arial_10pt,White,1);
+  lcdPrintString(145,130,"deg",arial_10pt,White,1);
+  lcdPrintString(195,130,"AU",arial_10pt,White,1);
+  lcdPrintString(45,150,"Mercury",arial_10pt,White,1);  // Text
+  lcdPrintString(45,170,"Venus",arial_10pt,White,1);
+  lcdPrintString(45,190,"Earth",arial_10pt,White,1);
+  lcdPrintString(45,210,"Mars",arial_10pt,White,1);
+  lcdPrintString(45,230,"Jupiter",arial_10pt,White,1);
+  lcdPrintString(45,250,"Saturn",arial_10pt,White,1);
+  lcdPrintString(45,270,"Uranus",arial_10pt,White,1);
+  lcdPrintString(45,290,"Neptune",arial_10pt,White,1);
   // Print date
   char buffer[16];
   sprintf(buffer,"%04i/%02i/%02i %02i:%02i",date[0],date[1],date[2],date[3],date[4]);
   lcdPrintString(95,70,buffer,arial_10pt,White,1);
-
   // Print Planet Position Values
   for(int i=0; i<8; i++){
     char temp[6];
     sprintf(temp,"%.1f",PlanetArray[i].lon);
-    lcdPrintString(95,140+i*20,temp,arial_10pt,White,1);
+    lcdPrintString(95,150+i*20,temp,arial_10pt,White,1);
     sprintf(temp,"%.1f",PlanetArray[i].lat);
-    lcdPrintString(145,140+i*20,temp,arial_10pt,White,1);
+    lcdPrintString(145,150+i*20,temp,arial_10pt,White,1);
     sprintf(temp,"%.1f",PlanetArray[i].r);
-    lcdPrintString(195,140+i*20,temp,arial_10pt,White,1);
+    lcdPrintString(195,150+i*20,temp,arial_10pt,White,1);
   }
 }
 
-/*
-void Menu_EngineeringMode(void){
-  char loop = 1;
-  while(1){
-   	lcdClear();
-   	Menu_Topbar();
-   	Menu_Back();
-   	lcdPrintString(130,15,"Engineering Mode",arial_14pt,White,1);		// Title
-   	lcdDrawRect(20,50,115,260,DarkGrey,1);											    // Planet Box
-   	lcdDrawRect(125,50,220,260,DarkGreen,1);												// Angle Box
-   	lcdDrawRect(20,270,115,310,DarkGreen,1);												// Demo Mode Button
-    lcdDrawRect(125,270,220,310,DarkGreen,1);                       // Set Angle button
-   	lcdPrintString(70,75,"Planet",arial_14pt,White,1);              // Titles
-    lcdPrintString(170,75,"Angle",arial_14pt,White,1);
-   	lcdPrintString(70,110,"Mercury",arial_10pt,White,1);
-   	lcdPrintString(70,130,"Venus",arial_10pt,White,1);
-   	lcdPrintString(70,150,"Earth",arial_10pt,White,1);
-   	lcdPrintString(70,170,"Mars",arial_10pt,White,1);
-   	lcdPrintString(70,190,"Jupiter",arial_10pt,White,1);
-   	lcdPrintString(70,210,"Saturn",arial_10pt,White,1);
-   	lcdPrintString(70,230,"Uranus",arial_10pt,White,1);
-   	lcdPrintString(70,250,"Neptune",arial_10pt,White,1);
-   	lcdPrintString(65,290,"Demo Mode",arial_14pt,White,1);
-    lcdPrintString(175,290,"Set Angle",arial_14pt,White,1);
-
-    float engineeringModeAngles[8];
-    for(uint8_t i=0; i<8; i++){
-      engineeringModeAngles[i] = setAngles[i];
-    }
-
-    while(loop){
-      pos.flag = 0;
-      sleep();
-      if (pos.flag){
-        pos.flag = 0;
-        if (pos.x>0 && pos.x<50 && pos.y>0  && pos.y<30){ // Back Button
-          return;
-        } else if (pos.x>20 && pos.x<115 && pos.y>270 && pos.y<310){	// Demo Mode Button
-          loop = 0;
-          Menu_SetDemoMode();
-        } else if (pos.x>125 && pos.x<220 && pos.y>270 && pos.y<310){ // Set Button
-          loop = 0;
-          for (uint8_t i=0; i<8; i++){
-            setAngles[i] = engineeringModeAngles[i];
-          }
-          Menu_SetAngles(engineeringModeAngles);
-        } else if (pos.x>125 && pos.x<220 && pos.y>100 && pos.y<260){
-          loop = 0;
-          if (pos.y>100 && pos.y<120){
-            engineeringModeAngles[0] = Menu_ChangeAngle(Mercury);
-          } else if (pos.y>120 && pos.y<140){
-            engineeringModeAngles[1] = Menu_ChangeAngle(Venus);
-          } else if (pos.y>140 && pos.y<160){
-            engineeringModeAngles[2] = Menu_ChangeAngle(Earth);
-          } else if (pos.y>160 && pos.y<180){
-            engineeringModeAngles[3] = Menu_ChangeAngle(Mars);
-          } else if (pos.y>180 && pos.y<200){
-            engineeringModeAngles[4] = Menu_ChangeAngle(Jupiter);
-          } else if (pos.y>200 && pos.y<220){
-            engineeringModeAngles[5] = Menu_ChangeAngle(Saturn);
-          } else if (pos.y>220 && pos.y<240){
-            engineeringModeAngles[6] = Menu_ChangeAngle(Uranus);
-          } else if (pos.y>240 && pos.y<260){
-            engineeringModeAngles[7] = Menu_ChangeAngle(Neptune);
-          }
-        }
-      }
-    }
-    loop = 1;
+void Menu_DrawEngineeringMode(float setAngles[8]){
+  lcdClear();
+  Menu_Topbar();
+  Menu_Back();
+  lcdPrintString(130,15,"Engineering Mode",arial_14pt,White,1);		// Title
+  lcdDrawRect(20,50,115,260,DarkGrey,1);											    // Planet Box
+  lcdDrawRect(125,50,220,260,DarkGreen,1);												// Angle Box
+  lcdDrawRect(20,270,115,310,DarkGreen,1);												// Demo Mode Button
+  lcdDrawRect(125,270,220,310,DarkGreen,1);                       // Set Angle button
+  lcdPrintString(70,75,"Planet",arial_14pt,White,1);              // Titles
+  lcdPrintString(170,75,"Angle",arial_14pt,White,1);
+  lcdPrintString(70,110,"Mercury",arial_10pt,White,1);
+  lcdPrintString(70,130,"Venus",arial_10pt,White,1);
+  lcdPrintString(70,150,"Earth",arial_10pt,White,1);
+  lcdPrintString(70,170,"Mars",arial_10pt,White,1);
+  lcdPrintString(70,190,"Jupiter",arial_10pt,White,1);
+  lcdPrintString(70,210,"Saturn",arial_10pt,White,1);
+  lcdPrintString(70,230,"Uranus",arial_10pt,White,1);
+  lcdPrintString(70,250,"Neptune",arial_10pt,White,1);
+  lcdPrintString(65,290,"Demo Mode",arial_14pt,White,1);
+  lcdPrintString(175,290,"Set Angle",arial_14pt,White,1);
+  char buffer[5];
+  for (int i=0;i<8;i++){
+    sprintf(buffer,"%.1f",setAngles[i]);
+    lcdPrintString(170,110+i*20,buffer,arial_10pt,White,1);
   }
-}*/
+}
 
 void Menu_RemoteServerControl(void){
 
@@ -177,15 +134,13 @@ void Menu_DrawChangeDate(void){
  }
 
 
-float Menu_ChangeAngle(void){
-  pos.flag = 0;
+void Menu_DrawChangeAngle(void){
  	lcdClear();
  	Menu_Topbar();
  	Menu_Back();
- 	lcdPrintString(50,5,"Change Angle",arial_14pt,White,0);		// Title
+ 	lcdPrintString(130,15,"Change Angle",arial_14pt,White,1);		// Title
  	lcdDrawRect(20,50,220,90,LightGrey,1);									// Date + Time
  	Menu_Numpad();
-  return 1.00;
  }
 
 

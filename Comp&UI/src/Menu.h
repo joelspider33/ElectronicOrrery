@@ -11,11 +11,9 @@ void Menu_DrawMainMenu(void);
 
 void Menu_DrawDateSelection(struct planet PlanetArray[8],int date[5]);
 void Menu_DrawChangeDate(void);
-void Menu_CurrentDate(void);
 
-// void Menu_EngineeringMode(void);
-float Menu_ChangeAngle(void);
-void Menu_ToggleDemoMode(void);
+void Menu_DrawEngineeringMode(float setAngles[8]);
+void Menu_DrawChangeAngle(void);
 
 void Menu_RemoteServerControl(void);
 void Menu_Ethernet(void);
