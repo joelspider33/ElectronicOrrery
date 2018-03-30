@@ -637,14 +637,21 @@ void lcdPrintString(int x, int y,const char *string, const FONT_INFO* font, int 
 			x+=font->spacePixels;							// Proceeds number of space pixels
 			i++;
 		}else{
-			lcdPrintChar(x, y, string[i] ,colour, font);			// Print character function
+			lcdPrintChar(x, y, string[i] ,colour, font,0);			// Print character function
 			x+=(font->charInfo[(string[i]-'!')].widthBits)+1;	// Proceed x by width+1 pixels
 			i++;																							// Next character
 		}
 	}
 }
 
-void lcdPrintChar(int x, int y, char c, int colour, const FONT_INFO* font){
+void lcdPrintChar(int x, int y, char c, int colour, const FONT_INFO* font, int position){
+  int Length = font->charInfo[c-'!'].widthBits;
+  if (position==1){
+    x-= (Length/2);
+    y = y-(font->heightBits/2);
+  } else if (position==2){
+    x-= Length;
+  }
 	uint16_t offset = font->charInfo[c-'!'].offset;									// Get offset from font chracter info array
 	uint8_t widthBytes = (int)((font->charInfo[c-'!'].widthBits-1)/8)+1;	// Find # of bytes in character
 	for(uint8_t i=0; i<font->heightBits; i++){											// Loop from top to bottom of bitmap

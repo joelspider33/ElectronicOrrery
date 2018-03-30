@@ -19,38 +19,42 @@
 #define CompUIAddr 		0x11 // with r/w bit = 0)
 
 // API Declarations
-I2C i2c(PTE25,PTE24);			// 100KHz default
-Serial pc(USBTX, USBRX); 	// tx, rx
+I2C i2c(PTE25,PTE24);						// 100KHz default
+Serial pc(USBTX, USBRX); 				// tx, rx
+DigitalOut sun(PTC12);					// Sun toggle
+Serial bluetooth(PTC17,PTC16);	// Bluetooth Serial Interrupt
 
+// Global Variables
+struct planet PlanetArray[8];
+int date[5];
+float setAngles[8];
 
 /*----------------------------------------------------------------------------
   Main function
  *----------------------------------------------------------------------------*/
 int main (void) {
 	// Initialisation
-	errorLED(0);
 	lcdReset();														// LCD Display Setup
 	calibration();												// Allows user to Calibrate Touchscreen
-	// Initialise Main Variables
-	struct planet PlanetArray[8];					// Contains lon,lat and distance(r)
-	int date[5] = {2000,1,1,0,0};					// YY,MM,DD,hh,mm
-	init(PlanetArray);										// Set all variables to default values
-	float setAngles[8];
-	for (int i=0;i<8;i++){
-		setAngles[i] = PlanetArray[i].lon;
-	}
+	bluetooth.attach(&bluetooth_ISR);
+	// Initialise Variables
+	init();
 
+	Menu_DrawMainMenu();
   while (1) {
-		Menu_DrawMainMenu();
 		sleepUntilTouch();
-		if(isTouchInside(20,220,50,90)){
-			DateSelection(PlanetArray,date,setAngles);
+		if 			 (isTouchInside(20,220,50,90)){
+			DateSelection();
+			Menu_DrawMainMenu();
 		} else if(isTouchInside(20,220,100,140)){
-			EngineeringMode(setAngles);
+			EngineeringMode();
+			Menu_DrawMainMenu();
 		} else if(isTouchInside(20,220,150,190)){
-			Menu_RemoteServerControl();
+			RemoteServerControl();
+			Menu_DrawMainMenu();
 		} else if(isTouchInside(20,220,200,240)){
-			Menu_Settings();
+			Settings();
+			Menu_DrawMainMenu();
 		}
 	}
 }
@@ -58,16 +62,24 @@ int main (void) {
   End of Main function
  *----------------------------------------------------------------------------*/
 
-void init(struct planet PlanetArray[8]){
-   getPlanetPos(PlanetArray,2000,1,1,0);	// Initialise Planet Positions to J2000.0 Epoch
+void init(){
+	getPlanetPos(PlanetArray,2000,1,1,0);
+	date[0] = 2000;
+	date[1] = 1;
+	date[2] = 1;
+	date[3] = 0;
+	date[4] = 0;
+	for (int i=0;i<8;i++){
+		setAngles[i] = PlanetArray[i].lon;
+	}
 }
 
-void DateSelection(struct planet PlanetArray[8], int date[5], float setAngles[8]){
+void DateSelection(){
 	Menu_DrawDateSelection(PlanetArray,date);
 	while(!isTouchInside(0,50,0,30)){
 		sleepUntilTouch();
 		if(isTouchInside(50,170,20,90)){
-			ChangeDate(date);
+			ChangeDate();
 			double time = (double)(date[4]) + ((double)(date[5])/24.0);
 			getPlanetPos(PlanetArray,date[0],date[1],date[2],time);
 			Menu_DrawDateSelection(PlanetArray,date);
@@ -76,7 +88,7 @@ void DateSelection(struct planet PlanetArray[8], int date[5], float setAngles[8]
 			for (int i=0;i<8;i++){
 				angles[i] = PlanetArray[i].lon;
 			}
-			if (SetAngles(angles)){
+			if (SetAngles(angles,0xFF)){
 				for (int i=0; i<8; i++){
 					setAngles[i] = angles[i];
 				}
@@ -86,13 +98,14 @@ void DateSelection(struct planet PlanetArray[8], int date[5], float setAngles[8]
 	}
 	return;
 }
-void EngineeringMode(float setAngles[8]){
+void EngineeringMode(){
 	Menu_DrawEngineeringMode(setAngles);
 	while(!isTouchInside(0,50,0,30)){
 		sleepUntilTouch();
 		for (int i=0; i<8; i++){
 			if (isTouchInside(125,220,100+i*20,120+i*20)){
-				ChangeAngle(i,setAngles);
+				ChangeAngle(i);
+				SetAngles(setAngles,0x1<<i);
 				Menu_DrawEngineeringMode(setAngles);
 				pos.flag=0;
 				break;
@@ -105,7 +118,40 @@ void EngineeringMode(float setAngles[8]){
 	}
 }
 
-void ChangeDate(int date[5]){
+void RemoteServerControl(){
+	Menu_DrawRemoteServerControl();
+	while(!isTouchInside(0,50,0,30)){
+		sleepUntilTouch();
+		if (isTouchInside(0,240,30,320)){
+			char buffer[63];
+			Keyboard(buffer);
+		}
+	}
+}
+
+void Settings(){
+	Menu_DrawSettings();
+	while(!isTouchInside(0,50,0,30)){
+		sleepUntilTouch();
+		if (isTouchInside(20,220,50,90)){	// Calibration Button
+			calibration();
+			Menu_DrawSettings();
+		} else if (isTouchInside(20,220,100,140)){	// Toggle Sun Button
+			sun = !sun;
+		} else if (isTouchInside(20,220,150,190)){	// Reset PLanets
+			lcdClear();
+			Menu_Topbar();
+			lcdPrintString(120,160,"Resetting Planets",arial_14pt,White,1);
+			init();
+			lcdPrintString(120,200,"Please Align Planet Ring Channel Indicator",arial_10pt,White,1);
+			lcdPrintString(120,220,"Touch to continue",arial_10pt,White,1);
+			sleepUntilTouch();
+			Menu_DrawSettings();
+		}
+	}
+}
+
+void ChangeDate(){
 	Menu_DrawChangeDate();
 	uint8_t datenum = 0;
  	char dateFormat[] = "YYYY/MM/DD hh:mm";
@@ -176,7 +222,7 @@ void ChangeDate(int date[5]){
 		}
 	}
 }
-void ChangeAngle(int p,float setAngles[8]){
+void ChangeAngle(int p){
 	Menu_DrawChangeAngle();
 	uint8_t num = 0;
  	char Format[] = "000.0";
@@ -234,14 +280,86 @@ void ChangeAngle(int p,float setAngles[8]){
 	}
 }
 
-bool SetAngles(float* angles){
+void Keyboard(char* str){
+	Menu_DrawKeyboard();
+	const char KeyboardABC[37] = "1234567890QWERTYUIOPASDFGHJKLZXCVBNM";
+	const char Keyboardabc[37] = "1234567890qwertyuiopasdfghjklzxcvbnm";
+	const char Keyboardsym[37] = "!\"#$%&\'()*+-,./\\:;<>=\?@[]^_`|{}~    ";
+	const char* keyboard;
+	keyboard = Keyboardabc;
+	int num=0;
+	char buffer[63];
+	buffer[0] = '_';
+	buffer[1] = '\0';
+	while(!isTouchInside(0,50,0,30)){
+		lcdDrawRect(30,90,220,110,LightGrey,1);
+		lcdPrintString(30,90,buffer,arial_10pt,White,0);
+		sleepUntilTouch();
+		if(num<63){
+			for(int i=0;i<10;i++){
+				if (isTouchInside(20+20*i,40+20*i,150,170)){
+					buffer[num] = keyboard[i];
+					num++;
+				} else if (isTouchInside(20+20*i,40+20*i,170,190)){
+					buffer[num] = keyboard[i+10];
+					num++;
+				}
+			}
+			for(int i=0;i<9;i++){
+				if(isTouchInside(30+20*i,50+20*i,190,210)){
+					buffer[num] = keyboard[i+20];
+					num++;
+				}
+			}
+		}
+		for(int i=0;i<7;i++){
+			if(isTouchInside(50+20*i,70+20*i,210,230)){
+				buffer[num] = keyboard[i+29];
+				num++;
+			}
+		}
+		if(isTouchInside(20,50,210,230)){	// Caps Lock
+			if(keyboard==Keyboardabc){
+				keyboard=KeyboardABC;
+				DrawKeyboard(1);
+			} else if(keyboard==KeyboardABC){
+				keyboard=Keyboardabc;
+				DrawKeyboard(0);
+			}
+		}
+		if(isTouchInside(20,50,230,250)){	// Symbols
+			if(keyboard==Keyboardsym){
+				keyboard=Keyboardabc;
+				DrawKeyboard(0);
+			} else if (keyboard==Keyboardabc||keyboard==KeyboardABC){
+				keyboard=Keyboardsym;
+				DrawKeyboard(2);
+			}
+		}
+		if(isTouchInside(190,220,210,230)){	// Backspace
+			if(num>0){
+				num--;
+			}
+		}
+		if(isTouchInside(20,220,260,300) && num>0){	// Confirm Box
+			for(int i=0;i<num;i++){
+				str[i] = buffer[i];
+			}
+			return;
+		}
+		buffer[num]='_';
+		buffer[num+1]='\0';
+	}
+}
+
+bool SetAngles(float* angles,char identifier){
    lcdClear();
    Menu_Topbar();
    Menu_Data(Black);
    lcdPrintString(120,160,"Setting Angles",arial_14pt,White,1);
 	 // Convert Floats to Bytes
    char bytearray[33];
-	 bytearray[0] = 0xFF;  						// Set config packet for all 1's so all planets move
+	 bytearray[0] = identifier;  			// Set config packet so identified planets move
    uint8_t* p = (uint8_t *)&angles;	// Create pointer looking for Bytes with address at start of float array
    for(uint8_t i=1; i<33;i++){			// For all bytes 1-33
      bytearray[i] = p[i];						// Copy bytes over in order to bytearray
@@ -309,3 +427,4 @@ bool checkDate(int date[5]){
  }
  return 0; // Not a valid hour
 }
+void bluetooth_ISR(){}

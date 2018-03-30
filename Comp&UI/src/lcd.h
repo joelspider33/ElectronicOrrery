@@ -84,5 +84,5 @@ void plotLineHigh(int x0, int y0, int x1, int y1, int colour);
 void lcdDrawRect(int x1, int y1, int x2, int y2, int colour, int fill);
 void lcdDrawCircle(int x0,int y0,int r,int colour,int fill);
 void lcdPrintString(int x, int y,const char *string,const FONT_INFO* font, int colour, int position);
-void lcdPrintChar(int x, int y, char c, int colour, const FONT_INFO* font);
+void lcdPrintChar(int x, int y, char c, int colour, const FONT_INFO* font, int position);
 uint8_t stringPixelLength(const char* string, const FONT_INFO* font);
