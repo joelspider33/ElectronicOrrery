@@ -99,6 +99,13 @@ void Menu_DrawRemoteServerControl(void){
   Menu_Topbar();
   Menu_Back();
   lcdPrintString(130,15,"Remote Server Control",arial_10pt,White,1);		// Title
+  lcdDrawRect(20, 50, 220, 70, DarkGreen, 1);
+  lcdPrintString(50,60, "Interface: ", arial_10pt, White, 1);
+  lcdDrawRect(20,80,220,100,LightGrey,1);
+  lcdPrintString(70,90,"SSID",arial_14pt,White,1);
+  lcdPrintString(170,90,"Encryption",arial_10pt,White,1);
+  lcdDrawRect(20,100,220,260,DarkGreen,1);
+  lcdDrawRect(20,280,220,300,LightGrey,1);
 }
 
 void Menu_DrawSettings(void){
@@ -253,6 +260,48 @@ void Menu_Shift(){
   for (int i=0; i<68; i+=2){
     lcdSetPixel(ShiftBitmap[i+1]+30,ShiftBitmap[i]+215,White);
   }
+}
+
+void Menu_UpArrow(int x, int y){
+  lcdDrawRect(x,y,x+20,y+20,Green,1);
+  const uint16_t UpBitmap[] =
+  { 0,5 ,0,6,
+    1,4 ,1,7,
+    2,3 ,2,8,
+    3,2 ,3,9,
+    4,1 ,4,10,
+    5,0 ,5,1 ,5,2 ,5,3 ,5,8 ,5,9 ,5,10 ,5,11,
+    6,3 ,6,8,
+    7,3 ,7,8,
+    8,3 ,8,8,
+    9,3 ,9,8,
+    10,3 ,10,8,
+    11,3 ,11,4 ,11,5 ,11,6 ,11,7 ,11,8};
+    for (int i=0; i<68; i+=2){
+      lcdSetPixel(UpBitmap[i+1]+x+4,UpBitmap[i]+y+4,White);
+    }
+    lcdDrawRect(x,y,x+20,y+20,White,0);
+}
+
+void Menu_DownArrow(int x, int y){
+  lcdDrawRect(x,y,x+20,y+20,Green,1);
+  const uint16_t DownBitmap[] =
+  { 11,5 ,11,6,
+    10,4 ,10,7,
+    9,3 ,9,8,
+    8,2 ,8,9,
+    7,1 ,7,10,
+    6,0 ,6,1 ,6,2 ,6,3 ,6,8 ,6,9 ,6,10 ,6,11,
+    5,3 ,5,8,
+    4,3 ,4,8,
+    3,3 ,3,8,
+    2,3 ,2,8,
+    1,3 ,1,8,
+    0,3 ,0,4 ,0,5 ,0,6 ,0,7 ,0,8};
+  for (int i=0; i<68; i+=2){
+    lcdSetPixel(DownBitmap[i+1]+x+4,DownBitmap[i]+y+4,White);
+  }
+  lcdDrawRect(x,y,x+20,y+20,Black,0);
 }
 
 void Menu_Back(){

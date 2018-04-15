@@ -31,5 +31,7 @@ void Menu_Topbar(void);
 void Menu_Wifi(int);
 void Menu_Data(int);
 void Menu_Shift(void);
+void Menu_UpArrow(int x, int y);
+void Menu_DownArrow(int x, int y);
 void Menu_Back(void);
 void Menu_Numpad(void);

@@ -12,6 +12,7 @@ bool isTouchInside(int x1,int x2,int y1,int y2);
 bool checkDate(int date[5]);  // YY,MM,DD,hh,mm
 void bluetooth_ISR(void);
 void init();
+int min(int,int);
 
 // Structure Functions
 void DateSelection();

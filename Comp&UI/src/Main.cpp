@@ -28,6 +28,11 @@ Serial bluetooth(PTC17,PTC16);	// Bluetooth Serial Interrupt
 struct planet PlanetArray[8];
 int date[5];
 float setAngles[8];
+struct SSID_struct{
+	char ID[32];
+	char length;
+	char encryption;
+};
 
 /*----------------------------------------------------------------------------
   Main function
@@ -120,14 +125,107 @@ void EngineeringMode(){
 
 void RemoteServerControl(){
 	Menu_DrawRemoteServerControl();
+	char bytearray[2] = {1,0};
+	char failure = i2c.write(InternetAddr<<1,bytearray,1);
+	if(failure){
+		lcdClear();
+		Menu_Topbar();
+		lcdPrintString(120,160,"Transmission Failed",arial_14pt,White,1);
+		lcdPrintString(120,200,"Internet Module Not Responding",arial_10pt,White,1);
+		lcdPrintString(120,220,"Touch to continue",arial_10pt,White,1);
+		sleepUntilTouch();
+		pos.flag=0;
+		return;
+	}
+	char SSIDno;
+	i2c.read(InternetAddr<<1,&SSIDno,1);	// Read length of SSID's
+	struct SSID_struct SSID[20];
+	for(int i=0;i<SSIDno;i++){
+		i2c.read(InternetAddr<<1,SSID[i].ID,32);
+		i2c.read(InternetAddr<<1,&SSID[i].length,1);
+		i2c.read(InternetAddr<<1,&SSID[i].encryption,1);
+	}
+	char n=0;	// Scrolling index
+	for(int i=n;i<n+7;i++){
+		lcdPrintString(70,110+20*i,SSID[i].ID,arial_10pt,White,1);
+		switch(SSID[i].encryption){
+			case 1:
+				lcdPrintString(170,110+20*i,"Open",arial_10pt,White,1);
+				break;
+			case 2:
+				lcdPrintString(170,110+20*i,"WEP",arial_10pt,White,1);
+				break;
+			case 3:
+				lcdPrintString(170,110+20*i,"WPA",arial_10pt,White,1);
+				break;
+			case 4:
+				lcdPrintString(170,110+20*i,"WPA2",arial_10pt,White,1);
+				break;
+			default:
+				lcdPrintString(170,110+20*i,"-",arial_10pt,White,1);
+		}
+	}
+	lcdPrintString(120,290,"Awaiting Password",arial_10pt,White,1);
+	Menu_UpArrow(220,100);
+	Menu_DownArrow(220,240);
+	char redraw = 0;
 	while(!isTouchInside(0,50,0,30)){
 		sleepUntilTouch();
-		if (isTouchInside(0,240,30,320)){
-			char buffer[63];
-			Keyboard(buffer);
+
+		if(isTouchInside(220,240,100,120) && n+7<SSIDno){
+			n++;
+			redraw=1;
+		}
+		if(isTouchInside(220,240,240,260) && n>0){
+			n--;
+			redraw=1;
+		}
+
+		for(int i=0; i<8; i++){
+			if (isTouchInside(20,220,100+i*20,120+i*20)){
+				char password[32];	// Passwords up to 32 characters allowed
+				Keyboard(password);
+				Menu_DrawRemoteServerControl();
+				lcdPrintString(120,290,"Checking Password",arial_10pt,White,1);
+				i2c.write(InternetAddr<<1,SSID[i+n].ID,32);
+				i2c.write(InternetAddr<<1,password,32);
+				wait_us(5);
+				i2c.read(InternetAddr<<1,&failure,1);
+				if(!failure){	// 0x00 failure, 0x01 success
+					lcdDrawRect(20,280,220,300,LightGrey,1);
+					lcdPrintString(120,290,"Incorrect Password",arial_10pt,White,1);
+				} else{	// If connection is succesful then continuously poll.
+					// ############################## THIS IS WHERE POLLING OF REMOTE SERVER CODE WILL GO ####################################
+				}
+				redraw=1;
+			}
+		}
+
+		if(redraw){
+			redraw=0;
+			for(int i=n;i<n+7;i++){
+				lcdPrintString(70,110+20*i,SSID[i].ID,arial_10pt,White,1);
+				switch(SSID[i].encryption){
+					case 1:
+						lcdPrintString(170,110+20*i,"Open",arial_10pt,White,1);
+						break;
+					case 2:
+						lcdPrintString(170,110+20*i,"WEP",arial_10pt,White,1);
+						break;
+					case 3:
+						lcdPrintString(170,110+20*i,"WPA",arial_10pt,White,1);
+						break;
+					case 4:
+						lcdPrintString(170,110+20*i,"WPA2",arial_10pt,White,1);
+						break;
+					default:
+						lcdPrintString(170,110+20*i,"-",arial_10pt,White,1);
+				}
+			}
 		}
 	}
 }
+
 
 void Settings(){
 	Menu_DrawSettings();
