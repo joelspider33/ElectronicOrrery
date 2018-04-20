@@ -6,18 +6,21 @@
  * Date: 		18/01/2018
  *----------------------------------------------------------------------------*/
 
-#ifndef MAIN_HEADER_FILE
-#define MAIN_HEADER_FILE
+// Complementary Functions
+void sleepUntilTouch(void);
+bool isTouchInside(int x1,int x2,int y1,int y2);
+bool checkDate(int date[5]);  // YY,MM,DD,hh,mm
+void bluetooth_ISR(void);
+void init();
+int min(int,int);
 
-#include <mbed.h>
-#include "Math.h"
-#include "stdint.h"
-#include "stdlib.h"
-#include "string.h"
-#include "lcd.h"
-#include "Planetary_Positioning.h"
-#include "Menu.h"
-
-uint8_t I2CSendAngles(char *);
-
-#endif
+// Structure Functions
+void DateSelection();
+void EngineeringMode();
+void RemoteServerControl();
+void Settings();
+void ChangeDate();
+void ChangeAngle(int p);
+void Keyboard(char* str);
+bool SetAngles(float *,char identifier); // Returns 1 if succesful
+bool SetDemoMode(void); // Returns 1 if successful

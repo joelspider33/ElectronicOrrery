@@ -8,6 +8,7 @@
 
 #include "lcd.h"
 
+
 // ################  Register Definitions  ################
 // For configuring Interrupt On PTC10 (Xpos of resistive touchscreen)
 #define PORTC_PCR10          (*((volatile unsigned long *) 0x4004B028))
@@ -23,7 +24,7 @@ Calibration_Matrix matrix;	// Calibration matrix for resistive touchscreen
 int height = 320; // Globals representing size of display, changes with orientation
 int width = 240;
 
-// SPI Interface API Declaration
+// API Declaration
 SPI spi(PTD2,PTD3,PTD1,PTD0);
 DigitalOut reset(PTC4);
 InterruptIn Xpos(PTC10);
@@ -32,7 +33,6 @@ InterruptIn Xpos(PTC10);
 // ################  RESISTIVE TOUCHSCREEN FUNCTIONS  ################
 
 void enableTouchInterrupt(void){
-
   Xpos.fall(&PORTC_IRQHandler);
   DigitalIn Xneg(PTB11,PullNone);
   DigitalIn Ypos(PTC11,PullNone);
@@ -151,7 +151,12 @@ COORD applyCalib(void){
 
 void calibration(void){
 	resetCalibrationMatrix();
+  lcdClear();
+  lcdPrintString(120,140,"Calibration",arial_14pt,White,1);
+  lcdPrintString(120,160,"Please Press Dots",arial_10pt,White,1);
 	lcdDrawCircle(36,48,5,Green,1);
+  wait_ms(500);
+  pos.flag = 0;
 	while(pos.flag==0){
     sleep();
   }
@@ -159,9 +164,10 @@ void calibration(void){
 	calibTrue[0].y = 48;
 	calibReported[0].x = pos.x;
 	calibReported[0].y = pos.y;
-	pos.flag = 0;
-	lcdDrawCircle(36,48,5,White,1);
+	lcdDrawCircle(36,48,5,Black,1);
 	lcdDrawCircle(204,160,5,Green,1);
+  wait_ms(500);
+  pos.flag = 0;
 	while(pos.flag==0){
     sleep();
   }
@@ -169,9 +175,10 @@ void calibration(void){
 	calibTrue[1].y = 160;
 	calibReported[1].x = pos.x;
 	calibReported[1].y = pos.y;
-	pos.flag = 0;
-	lcdDrawCircle(204,160,5,White,1);
+	lcdDrawCircle(204,160,5,Black,1);
 	lcdDrawCircle(120,272,5,Green,1);
+  wait_ms(500);
+  pos.flag = 0;
 	while(pos.flag==0){
     sleep();
   }
@@ -179,9 +186,10 @@ void calibration(void){
 	calibTrue[2].y = 272;
 	calibReported[2].x = pos.x;
 	calibReported[2].y = pos.y;
-	pos.flag = 0;
-	lcdDrawCircle(120,272,5,White,1);
+	lcdDrawCircle(120,272,5,Black,1);
 	setCalibrationMatrix();
+  // Save calibration information to SD card
+  pos.flag = 0;
 }
 
 
@@ -330,12 +338,8 @@ void lcdReset(void){
 	lcdcmd(0x29);		// Display on
 	wait_ms(100);
 
-
 	lcdSetOrientation(0);
-	lcdClear();
   enableTouchInterrupt();
-	calibration();
-
 }
 
 
@@ -423,7 +427,7 @@ void lcdSetMem(int x, int y, int w, int h){
 }
 
 void lcdClear(void){
-	lcdDrawRect(0,0,width-1,height-1,White,1);
+	lcdDrawRect(0,0,width-1,height-1,Black,1);
 }
 
 void lcdSetPixel(int x,int y,int colour){
@@ -618,25 +622,36 @@ const FONT_INFO* font   - Font type (Choose from defined font types)
 int colour              - 16-bit Colour
 int position            - 0-Left, 1-Center, 2-Right
 */
-void lcdPrintString(int x, int y, char *string, const FONT_INFO* font, int colour, int position){
+void lcdPrintString(int x, int y,const char *string, const FONT_INFO* font, int colour, int position){
 	uint8_t i = 0;												// String index
-  if(position){ // If Left then no need to alter x
+  if(position == Center){ // If Left then no need to alter x, if Centre then x=x-l/2, if Right then x=x-l
     uint8_t l = stringPixelLength(string,font);
-    x -= position*(l/2);                  // If Left then x=x, if Centre then x=x-l/2, if Right then x=x-l
+    x = x - l/2;
+    y = y-(font->heightBits/2);
+  } else if (position == Right){         // If Positition is to Center then centre on y
+    uint8_t l = stringPixelLength(string,font);
+    x = x - l;
   }
 	while(string[i]!='\0'){								// Loops until null character (end of string) is detected
 		if(string[i] == 0x20){							// If space character then proceed number of spaces
 			x+=font->spacePixels;							// Proceeds number of space pixels
 			i++;
 		}else{
-			lcdPrintChar(x, y, string[i] ,colour, font);			// Print character function
+			lcdPrintChar(x, y, string[i] ,colour, font,0);			// Print character function
 			x+=(font->charInfo[(string[i]-'!')].widthBits)+1;	// Proceed x by width+1 pixels
 			i++;																							// Next character
 		}
 	}
 }
 
-void lcdPrintChar(int x, int y, char c, int colour, const FONT_INFO* font){
+void lcdPrintChar(int x, int y, char c, int colour, const FONT_INFO* font, int position){
+  int Length = font->charInfo[c-'!'].widthBits;
+  if (position==1){
+    x-= (Length/2);
+    y = y-(font->heightBits/2);
+  } else if (position==2){
+    x-= Length;
+  }
 	uint16_t offset = font->charInfo[c-'!'].offset;									// Get offset from font chracter info array
 	uint8_t widthBytes = (int)((font->charInfo[c-'!'].widthBits-1)/8)+1;	// Find # of bytes in character
 	for(uint8_t i=0; i<font->heightBits; i++){											// Loop from top to bottom of bitmap
@@ -648,14 +663,13 @@ void lcdPrintChar(int x, int y, char c, int colour, const FONT_INFO* font){
 	}
 }
 
-uint8_t stringPixelLength(char* string, const FONT_INFO* font){
+uint8_t stringPixelLength(const char* string, const FONT_INFO* font){
   uint8_t pixelLength = 0;
   for(uint8_t i=0; i<strlen(string); i++){
     if (string[i] == 0x20){ // If the character is a space then find width in font info
       pixelLength += font->spacePixels;
-
     }else{
-      pixelLength += font->charInfo[string[i]-'!'].widthBits;
+      pixelLength += font->charInfo[string[i]-'!'].widthBits+1;
     }
   }
   return pixelLength;
