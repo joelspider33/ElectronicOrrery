@@ -24,3 +24,6 @@ void ChangeAngle(int p);
 void Keyboard(char* str);
 bool SetAngles(float *,char identifier); // Returns 1 if succesful
 bool SetDemoMode(void); // Returns 1 if successful
+void I2CFailedInternet();
+void I2CFailedMechatronics();
+bool readCurrentDate();

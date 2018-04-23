@@ -42,7 +42,7 @@ struct SSID_struct{
   Main function
  *----------------------------------------------------------------------------*/
 int main (void) {
-
+	pc.printf("Hello World!\n");
 	// Initialisation
 	powerLED=1;
 	busyLED=1;
@@ -92,12 +92,12 @@ void DateSelection(){
 	Menu_DrawDateSelection(PlanetArray,date);
 	while(!isTouchInside(0,50,0,30)){
 		sleepUntilTouch();
-		if(isTouchInside(50,170,20,90)){
+		if(isTouchInside(20,170,40,70)){
 			ChangeDate();
 			double time = (double)(date[4]) + ((double)(date[5])/24.0);
 			getPlanetPos(PlanetArray,date[0],date[1],date[2],time);
 			Menu_DrawDateSelection(PlanetArray,date);
-		} else if(isTouchInside(180,220,50,90)){
+		} else if(isTouchInside(180,220,40,70)){
 			float angles[8];
 			for (int i=0;i<8;i++){
 				angles[i] = PlanetArray[i].lon;
@@ -107,6 +107,9 @@ void DateSelection(){
 					setAngles[i] = angles[i];
 				}
 			}
+			Menu_DrawDateSelection(PlanetArray,date);
+		} else if(isTouchInside(20,220,70,90)){
+			readCurrentDate();
 			Menu_DrawDateSelection(PlanetArray,date);
 		}
 	}
@@ -236,7 +239,6 @@ void RemoteServerControl(){
 		}
 	}
 }
-
 
 void Settings(){
 	Menu_DrawSettings();
@@ -388,7 +390,6 @@ void ChangeAngle(int p){
 		}
 	}
 }
-
 void Keyboard(char* str){
 	Menu_DrawKeyboard();
 	const char KeyboardABC[37] = "1234567890QWERTYUIOPASDFGHJKLZXCVBNM";
@@ -460,34 +461,30 @@ void Keyboard(char* str){
 		buffer[num+1]='\0';
 	}
 }
-
 bool SetAngles(float* angles,char identifier){
 	pc.printf("Set Angles function Entered\n");
    lcdClear();
    Menu_Topbar();
    Menu_Data(Black);
    lcdPrintString(120,160,"Setting Angles",arial_14pt,White,1);
+	 for(int i=0; i<8; i++){
+		 pc.printf("Planet: %i Angle: %f\n",i,angles[i]);
+	 }
 	 // Convert Floats to Bytes
    char bytearray[33];
 	 bytearray[0] = identifier;  			// Set config packet so identified planets move
-   uint8_t* p = (uint8_t *)&angles;	// Create pointer looking for Bytes with address at start of float array
+   uint8_t* p = (uint8_t *)angles;	// Create pointer looking for Bytes with address at start of float array
    for(uint8_t i=1; i<33; i++){			// For all bytes 1-33
      bytearray[i] = p[i-1];					// Copy bytes over in order to bytearray
    }
 	 for(uint8_t i=0; i<33; i++){
-		 pc.printf("Byte %i = %c",i,bytearray[i]);
+		 pc.printf("Byte %i = %i\n",i,bytearray[i]);
 	 }
    char failure = i2c.write(MechAddr<<1,bytearray,33);
    lcdClear();
    Menu_Topbar();
    if(failure){
-		 errorLED=1;
-     lcdPrintString(120,160,"Transmission Failed",arial_14pt,White,1);
-     lcdPrintString(120,200,"Mechatronics Module Not Responding",arial_10pt,White,1);
-     lcdPrintString(120,220,"Touch to continue",arial_10pt,White,1);
-     sleepUntilTouch();
-		 errorLED=0;
-		 pos.flag=0;
+		 I2CFailedMechatronics();
 		 return 0;
    }
 	 return 1;
@@ -500,20 +497,11 @@ bool SetDemoMode(void){
 	char bytearray[2] = {0,0};
 	char failure = i2c.write(MechAddr<<1,bytearray,2);
 	if(failure){
-		errorLED=1;
-		lcdClear();
-		Menu_Topbar();
-		lcdPrintString(120,160,"Transmission Failed",arial_14pt,White,1);
-		lcdPrintString(120,200,"Mechatronics Module Not Responding",arial_10pt,White,1);
-		lcdPrintString(120,220,"Touch to continue",arial_10pt,White,1);
-		sleepUntilTouch();
-		errorLED=0;
-		pos.flag=0;
+		I2CFailedMechatronics();
 		return 0;
 	}
 	return 1;
 }
-
 void sleepUntilTouch(){
 	busyLED=0;
 	pos.flag = 0;
@@ -545,5 +533,55 @@ bool checkDate(int date[5]){
 	 }
  }
  return 0; // Not a valid hour
+}
+bool readCurrentDate(){
+	lcdClear();
+	lcdPrintString(120,160,"Retrieving Date",arial_14pt,White,1);
+	char bytearray[16] = {2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	char failure = i2c.write(InternetAddr<<1,bytearray,1);
+	if(failure){
+		I2CFailedInternet();
+		return 0;
+	}
+	failure = i2c.read(InternetAddr<<1,bytearray,16);
+	if(failure){
+		I2CFailedInternet();
+		return 0;
+	}
+	char* ptr;
+	ptr = &bytearray[0];
+	int dateTemp[5];  // [YY,MM,DD,hh,mm]
+	for(int i=0; i<5; i++){
+		dateTemp[i] = strtol(ptr,&ptr,10);		// Store Date String as ints
+		ptr++;
+	}
+	if(checkDate(dateTemp)){
+		for(int i=0; i<5; i++){
+			date[i] = dateTemp[i];
+		}
+		return 1;
+	}
+	return 0;
+}
+void I2CFailedInternet(){
+	errorLED=1;
+	lcdClear();
+	Menu_Topbar();
+	lcdPrintString(120,160,"Transmission Failed",arial_14pt,White,1);
+	lcdPrintString(120,200,"Internet Module Not Responding",arial_10pt,White,1);
+	lcdPrintString(120,220,"Touch to continue",arial_10pt,White,1);
+	sleepUntilTouch();
+	errorLED=0;
+	pos.flag=0;
+}
+void I2CFailedMechatronics(){
+	errorLED=1;
+	lcdClear();
+	lcdPrintString(120,160,"Transmission Failed",arial_14pt,White,1);
+	lcdPrintString(120,200,"Mechatronics Module Not Responding",arial_10pt,White,1);
+	lcdPrintString(120,220,"Touch to continue",arial_10pt,White,1);
+	sleepUntilTouch();
+	errorLED=0;
+	pos.flag=0;
 }
 void bluetooth_ISR(){}
