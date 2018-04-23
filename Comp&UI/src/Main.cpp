@@ -13,6 +13,47 @@
 #include "lcd.h"
 #include "Planetary_Positioning.h"
 
+<<<<<<< HEAD
+// DEFINES
+#define MechAddr 			0x12
+#define InternetAddr 	0x14
+#define CompUIAddr 		0x16
+
+// API CLASSES
+// I2C Interface Setup
+I2C i2c(PTE25,PTE24);			// 100KHz default
+Serial pc(USBTX,USBRX);
+InterruptIn button(SW2);
+char button_flag = 0;
+
+DigitalOut rled(LED1);
+DigitalOut gled(LED2);
+DigitalOut bled(LED3);
+void errorLED(int x){
+	switch (x){
+		case 0:
+			rled = 1;
+			bled = 1;
+			gled = 1;
+			break;
+		case 1:
+			rled = 0;
+			bled = 1;
+			gled = 1;
+			break;
+		case 2:
+			rled = 1;
+			bled = 0;
+			gled = 1;
+			break;
+		case 3:
+			rled = 1;
+			bled = 1;
+			gled = 0;
+			break;
+	}
+}
+=======
 // Pre-Processor #DEFINES
 #define MechAddr 			0x09 // with r/w bit = 0)
 #define InternetAddr 	0x10 // with r/w bit = 0)
@@ -26,6 +67,7 @@ DigitalOut powerLED(PTC3);			// Power LED
 DigitalOut busyLED(PTC2);				// Busy LED
 DigitalOut errorLED(PTA2);			// Error LED
 Serial bluetooth(PTC17,PTC16);	// Bluetooth Serial Interrupt
+>>>>>>> ae1317dcfc8e7d788bfa034fa7f7a1ccdcc3c4b0
 
 // Global Variables
 struct planet PlanetArray[8];
@@ -37,10 +79,27 @@ struct SSID_struct{
 	char encryption;
 };
 
+void buttonISR(void){
+	button_flag = 1;
+}
+
 /*----------------------------------------------------------------------------
   Main function
  *----------------------------------------------------------------------------*/
 int main (void) {
+<<<<<<< HEAD
+	errorLED(0);
+	button.rise(&buttonISR);
+	// Initialisation
+	lcdReset();								// LCD Display Setup
+	char bytearray[33];		// Angle array
+	PosComp(2000,1,01,0);
+	format_I2C(bytearray);
+	// I2CSendAngles((char*)bytearray);
+
+	unsigned char state = 0;
+	Menu_StartScreen();
+=======
 	// Initialisation
 	powerLED=1;
 	busyLED=1;
@@ -52,6 +111,7 @@ int main (void) {
 	init();
 	pc.printf("Comp&UI Module Initialised\n");
 	Menu_DrawMainMenu();
+>>>>>>> ae1317dcfc8e7d788bfa034fa7f7a1ccdcc3c4b0
   while (1) {
 		sleepUntilTouch();
 		if 			 (isTouchInside(20,220,50,90)){
@@ -73,6 +133,31 @@ int main (void) {
   End of Main function
  *----------------------------------------------------------------------------*/
 
+<<<<<<< HEAD
+		/*	MENU STRUCTURE
+		During Menu Displays where user input will directly take you to another state, the MCU can poll Internet Module for information
+		During Menu Displays where user input is interpreted such as Menu_ChangeAngle, Menu_ChangeDate and Wifi_Settings then polling is post-poned.
+		*/
+		errorLED(1);
+		sleep();
+
+
+		if (button_flag){
+			pc.printf("Sending I2C Commands:\n");
+			I2CSendAngles((char*)bytearray);
+			pc.printf("Success!\n");
+			errorLED(2);
+		}
+
+
+		// If a touch event is detected then call stateChange() function and if change occurs then update
+		if(pos.flag){
+			pos.flag = 0;
+			uint8_t temp = state;
+			state = stateChange(state);
+			if(temp != state){
+				(*Menu[state])();
+=======
 void init(){
 	getPlanetPos(PlanetArray,2000,1,1,0);
 	date[0] = 2000;
@@ -103,6 +188,7 @@ void DateSelection(){
 				for (int i=0; i<8; i++){
 					setAngles[i] = angles[i];
 				}
+>>>>>>> ae1317dcfc8e7d788bfa034fa7f7a1ccdcc3c4b0
 			}
 			Menu_DrawDateSelection(PlanetArray,date);
 		}
