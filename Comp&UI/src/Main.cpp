@@ -26,6 +26,7 @@ DigitalOut powerLED(PTC3);			// Power LED
 DigitalOut busyLED(PTC2);				// Busy LED
 DigitalOut errorLED(PTA2);			// Error LED
 Serial bluetooth(PTC17,PTC16);	// Bluetooth Serial Interrupt
+Timeout timeout;
 
 // Global Variables
 struct planet PlanetArray[8];
@@ -137,18 +138,10 @@ void EngineeringMode(){
 
 void RemoteServerControl(){
 	Menu_DrawRemoteServerControl();
-	char bytearray[2] = {1,0};
-	char failure = i2c.write(InternetAddr<<1,bytearray,1);
+	char poll = 1;;
+	char failure = i2c.write(InternetAddr<<1,&poll,1);
 	if(failure){
-		errorLED=1;
-		lcdClear();
-		Menu_Topbar();
-		lcdPrintString(120,160,"Transmission Failed",arial_14pt,White,1);
-		lcdPrintString(120,200,"Internet Module Not Responding",arial_10pt,White,1);
-		lcdPrintString(120,220,"Touch to continue",arial_10pt,White,1);
-		sleepUntilTouch();
-		errorLED=0;
-		pos.flag=0;
+		I2CFailedInternet();
 		return;
 	}
 	char SSIDno;
@@ -205,11 +198,97 @@ void RemoteServerControl(){
 				i2c.write(InternetAddr<<1,password,32);
 				wait_us(5);
 				i2c.read(InternetAddr<<1,&failure,1);
+				char* ptr;
 				if(!failure){	// 0x00 failure, 0x01 success
 					lcdDrawRect(20,280,220,300,LightGrey,1);
 					lcdPrintString(120,290,"Incorrect Password",arial_10pt,White,1);
 				} else{	// If connection is succesful then continuously poll.
-					// ############################## THIS IS WHERE POLLING OF REMOTE SERVER CODE WILL GO ####################################
+					lcdDrawRect(20,280,220,300,LightGrey,1);
+					lcdPrintString(120,290,"Polling Remote Server",arial_10pt,White,1);
+					while(!isTouchInside(0,50,0,30)){
+						timeout.attach(&nullISR,0.5);
+						sleep();
+						poll = 0;
+						lcdDrawRect(20,280,220,300,LightGrey,1);
+						i2c.write(InternetAddr<<1,&poll,1);
+						i2c.read(InternetAddr<<1,&poll,1);
+						switch(poll){
+							case 0:
+								lcdPrintString(120,290,"Polling Remote Server",arial_10pt,White,1);
+								break;
+							case 1:
+								lcdPrintString(120,290,"Server Input Date",arial_10pt,White,1);
+								char datestr[16];
+								i2c.read(InternetAddr,datestr,16);
+								int dateTemp[5];  // [YY,MM,DD,hh,mm]
+								ptr = &datestr[0];
+								for(int i=0; i<5; i++){
+									dateTemp[i] = strtol(ptr,&ptr,10);		// Store Date String as ints
+									ptr++;
+								}
+								if(checkDate(dateTemp)){
+									for(int i=0; i<5; i++){
+										date[i] = dateTemp[i];
+									}
+									lcdDrawRect(20,280,220,300,LightGrey,1);
+									lcdPrintString(120,290,"Converting Date to Planet Positions",arial_10pt,White,1);
+									double time = (double)(date[4]) + ((double)(date[5])/24.0);
+									getPlanetPos(PlanetArray,date[0],date[1],date[2],time);
+									lcdDrawRect(20,280,220,300,LightGrey,1);
+									lcdPrintString(120,290,"Setting Planet Positions",arial_10pt,White,1);
+									float angles[8];
+									for (int i=0;i<8;i++){
+										angles[i] = PlanetArray[i].lon;
+									}
+									if (SetAngles(angles,0xFF)){
+										for (int i=0; i<8; i++){
+											setAngles[i] = angles[i];
+										}
+									}
+								}
+								lcdDrawRect(20,280,220,300,LightGrey,1);
+								lcdPrintString(120,290,"Incorrect Date",arial_10pt,White,1);
+								break;
+							case 2:
+								lcdPrintString(120,290,"Server Input Angles",arial_10pt,White,1);
+								float angles[8];
+								ptr = (char*)angles;
+								i2c.read(InternetAddr<<1,ptr,32);
+								failure = 0;
+								for(int i =0; i<8; i++){
+									if(angles[i]>=360 || angles[i]<0){
+										failure = 1;
+									}
+								}
+								if(!failure){
+									if(SetAngles(angles,0xFF)){
+										for(int i=0;i<8;i++){
+											setAngles[i] = angles[i];
+										}
+										lcdDrawRect(20,280,220,300,LightGrey,1);
+										lcdPrintString(120,290,"Succesfully Set Angles",arial_10pt,White,1);
+									} else{
+										lcdDrawRect(20,280,220,300,LightGrey,1);
+										lcdPrintString(120,290,"Failed to Set Angles",arial_10pt,White,1);
+									}
+								} else{
+									lcdDrawRect(20,280,220,300,LightGrey,1);
+									lcdPrintString(120,290,"Set angles not within 0<x<360",arial_10pt,White,1);
+								}
+								break;
+							case 3:
+								lcdPrintString(120,290,"Server Input Demo Mode",arial_10pt,White,1);
+								i2c.read(InternetAddr<<1,&poll,1);
+								if (SetDemoMode()){
+									lcdDrawRect(20,280,220,300,LightGrey,1);
+									lcdPrintString(120,290,"Succesfully Set Demo",arial_10pt,White,1);
+								} else{
+									lcdDrawRect(20,280,220,300,LightGrey,1);
+									lcdPrintString(120,290,"Failed to Set Demo",arial_10pt,White,1);
+								}
+								break;
+						}
+					}
 				}
 				redraw=1;
 			}
@@ -462,14 +541,10 @@ void Keyboard(char* str){
 	}
 }
 bool SetAngles(float* angles,char identifier){
-	pc.printf("Set Angles function Entered\n");
    lcdClear();
    Menu_Topbar();
    Menu_Data(Black);
    lcdPrintString(120,160,"Setting Angles",arial_14pt,White,1);
-	 for(int i=0; i<8; i++){
-		 pc.printf("Planet: %i Angle: %f\n",i,angles[i]);
-	 }
 	 // Convert Floats to Bytes
    char bytearray[33];
 	 bytearray[0] = identifier;  			// Set config packet so identified planets move
@@ -477,9 +552,6 @@ bool SetAngles(float* angles,char identifier){
    for(uint8_t i=1; i<33; i++){			// For all bytes 1-33
      bytearray[i] = p[i-1];					// Copy bytes over in order to bytearray
    }
-	 for(uint8_t i=0; i<33; i++){
-		 pc.printf("Byte %i = %i\n",i,bytearray[i]);
-	 }
    char failure = i2c.write(MechAddr<<1,bytearray,33);
    lcdClear();
    Menu_Topbar();
@@ -585,3 +657,4 @@ void I2CFailedMechatronics(){
 	pos.flag=0;
 }
 void bluetooth_ISR(){}
+void nullISR(){}

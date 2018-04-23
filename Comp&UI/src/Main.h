@@ -27,3 +27,4 @@ bool SetDemoMode(void); // Returns 1 if successful
 void I2CFailedInternet();
 void I2CFailedMechatronics();
 bool readCurrentDate();
+void nullISR();
