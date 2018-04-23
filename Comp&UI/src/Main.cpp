@@ -22,6 +22,9 @@
 I2C i2c(PTE25,PTE24);						// 100KHz default
 Serial pc(USBTX, USBRX); 				// tx, rx
 DigitalOut sun(PTC12);					// Sun toggle
+DigitalOut powerLED(PTC3);			// Power LED
+DigitalOut busyLED(PTC2);				// Busy LED
+DigitalOut errorLED(PTA2);			// Error LED
 Serial bluetooth(PTC17,PTC16);	// Bluetooth Serial Interrupt
 
 // Global Variables
@@ -39,12 +42,15 @@ struct SSID_struct{
  *----------------------------------------------------------------------------*/
 int main (void) {
 	// Initialisation
+	powerLED=1;
+	busyLED=1;
+	errorLED=0;
 	lcdReset();														// LCD Display Setup
 	calibration();												// Allows user to Calibrate Touchscreen
 	bluetooth.attach(&bluetooth_ISR);
 	// Initialise Variables
 	init();
-
+	pc.printf("Comp&UI Module Initialised\n");
 	Menu_DrawMainMenu();
   while (1) {
 		sleepUntilTouch();
@@ -128,12 +134,14 @@ void RemoteServerControl(){
 	char bytearray[2] = {1,0};
 	char failure = i2c.write(InternetAddr<<1,bytearray,1);
 	if(failure){
+		errorLED=1;
 		lcdClear();
 		Menu_Topbar();
 		lcdPrintString(120,160,"Transmission Failed",arial_14pt,White,1);
 		lcdPrintString(120,200,"Internet Module Not Responding",arial_10pt,White,1);
 		lcdPrintString(120,220,"Touch to continue",arial_10pt,White,1);
 		sleepUntilTouch();
+		errorLED=0;
 		pos.flag=0;
 		return;
 	}
@@ -451,6 +459,7 @@ void Keyboard(char* str){
 }
 
 bool SetAngles(float* angles,char identifier){
+	pc.printf("Set Angles function Entered\n");
    lcdClear();
    Menu_Topbar();
    Menu_Data(Black);
@@ -459,17 +468,22 @@ bool SetAngles(float* angles,char identifier){
    char bytearray[33];
 	 bytearray[0] = identifier;  			// Set config packet so identified planets move
    uint8_t* p = (uint8_t *)&angles;	// Create pointer looking for Bytes with address at start of float array
-   for(uint8_t i=1; i<33;i++){			// For all bytes 1-33
-     bytearray[i] = p[i];						// Copy bytes over in order to bytearray
+   for(uint8_t i=1; i<33; i++){			// For all bytes 1-33
+     bytearray[i] = p[i-1];					// Copy bytes over in order to bytearray
    }
+	 for(uint8_t i=0; i<33; i++){
+		 pc.printf("Byte %i = %c",i,bytearray[i]);
+	 }
    char failure = i2c.write(MechAddr<<1,bytearray,33);
    lcdClear();
    Menu_Topbar();
    if(failure){
+		 errorLED=1;
      lcdPrintString(120,160,"Transmission Failed",arial_14pt,White,1);
      lcdPrintString(120,200,"Mechatronics Module Not Responding",arial_10pt,White,1);
      lcdPrintString(120,220,"Touch to continue",arial_10pt,White,1);
      sleepUntilTouch();
+		 errorLED=0;
 		 pos.flag=0;
 		 return 0;
    }
@@ -483,12 +497,14 @@ bool SetDemoMode(void){
 	char bytearray[2] = {0,0};
 	char failure = i2c.write(MechAddr<<1,bytearray,2);
 	if(failure){
+		errorLED=1;
 		lcdClear();
 		Menu_Topbar();
 		lcdPrintString(120,160,"Transmission Failed",arial_14pt,White,1);
 		lcdPrintString(120,200,"Mechatronics Module Not Responding",arial_10pt,White,1);
 		lcdPrintString(120,220,"Touch to continue",arial_10pt,White,1);
 		sleepUntilTouch();
+		errorLED=0;
 		pos.flag=0;
 		return 0;
 	}
@@ -496,10 +512,12 @@ bool SetDemoMode(void){
 }
 
 void sleepUntilTouch(){
+	busyLED=0;
 	pos.flag = 0;
 	while(pos.flag==0){
 		sleep();
 	}
+	busyLED=1;
 }
 bool isTouchInside(int x1,int x2,int y1,int y2){
 	if(pos.x > x1 && pos.x < x2 && pos.y > y1 && pos.y < y2 && pos.flag){
