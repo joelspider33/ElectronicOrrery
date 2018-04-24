@@ -49,8 +49,8 @@ int main (void) {
 	busyLED=1;
 	errorLED=0;
 	lcdReset();														// LCD Display Setup
-	calibration();												// Allows user to Calibrate Touchscreen
 	splashScreen();
+	calibration();												// Allows user to Calibrate Touchscreen
 	bluetooth.attach(&bluetooth_ISR);
 	// Initialise Variables
 	init();
@@ -88,24 +88,27 @@ void init(){
 	for (int i=0;i<8;i++){
 		setAngles[i] = PlanetArray[i].lon;
 	}
+	pos.flag=0;
 }
 void splashScreen(){
 	lcdClear();
-	lcdDrawCircle(120,160, 10, Yellow, 1);	// Sun
+	lcdDrawCircle(120,160, 20, Yellow, 1);	// Sun
 	for(int i=0; i<8; i++){
-		lcdDrawCircle(120,160, 20+i*10, LightGrey, 0);	// Planet Orbits
+		lcdDrawCircle(120,160, 30+i*10, LightGrey, 0);	// Planet Orbits
 	}
-	lcdDrawCircle(140,160, 10, Maroon, 1);	// Mercury
-	lcdDrawCircle(141,139, 10, Orange, 1);	// Venus
-	lcdDrawCircle(120,120, 10, Green, 1);		// Earth
-	lcdDrawCircle(85,125, 10, Red, 1);			// Mars
-	lcdDrawCircle(60,160, 10, Magenta, 1);	// Jupiter
-	lcdDrawCircle(170,110, 10, White, 1);		// Saturn
-	lcdDrawCircle(170,110, 14, White, 0);	// Saturn Ring
-	lcdDrawCircle(120,240, 10, Blue, 1);		// Uranus
-	lcdDrawCircle(184,224, 10, Navy, 1);		// Neptune
-	lcdPrintString(120,15,"ORRERY",arial_14pt,White,1);
-	wait_ms(2000);
+	lcdDrawCircle(150,160, 5, Maroon, 1);	// Mercury
+	lcdDrawCircle(148,132, 7, Orange, 1);	// Venus
+	lcdDrawCircle(120,110, 10, Green, 1);		// Earth
+	lcdDrawCircle(78,118, 8, Red, 1);			// Mars
+	lcdDrawCircle(50,160, 14, Magenta, 1);	// Jupiter
+	lcdDrawCircle(63,217, 12, White, 1);		// Saturn
+	lcdDrawCircle(63,217, 15, White, 0);	// Saturn Ring
+	lcdDrawCircle(120,250, 8, Blue, 1);		// Uranus
+	lcdDrawCircle(191,231, 7, Navy, 1);		// Neptune
+	lcdPrintString(120,30,"ORRERY",arial_14pt,White,1);
+	lcdPrintString(120,280,"Developed By:",arial_10pt,White,1);
+	lcdPrintString(120,300,"J.Webb, J.Berriman, A.Patel",arial_10pt,White,1);
+	sleepUntilTouch();
 }
 
 void DateSelection(){
@@ -347,6 +350,11 @@ void Settings(){
 			Menu_DrawSettings();
 		} else if (isTouchInside(20,220,100,140)){	// Toggle Sun Button
 			sun = !sun;
+			if(sun){
+				lcdDrawRect(190,110,210,130,Yellow,1);
+			}else{
+				lcdDrawRect(190,110,210,130,Black,1);
+			}
 		} else if (isTouchInside(20,220,150,190)){	// Reset PLanets
 			lcdClear();
 			Menu_Topbar();

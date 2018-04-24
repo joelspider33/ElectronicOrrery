@@ -580,7 +580,7 @@ void lcdDrawCircle(int x0,int y0,int r,int colour,int fill){
     int y = 0;
     int dx = 1;
     int dy = 1;
-    int err = dx - (r << 1);
+    int err = dx - (r << 1); // r<<1 bascially multiplies r by 2 to get the diameter
 
     while (x >= y)
     {
