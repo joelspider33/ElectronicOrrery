@@ -28,3 +28,4 @@ void I2CFailedInternet();
 void I2CFailedMechatronics();
 bool readCurrentDate();
 void nullISR();
+void splashScreen();

@@ -50,6 +50,7 @@ int main (void) {
 	errorLED=0;
 	lcdReset();														// LCD Display Setup
 	calibration();												// Allows user to Calibrate Touchscreen
+	splashScreen();
 	bluetooth.attach(&bluetooth_ISR);
 	// Initialise Variables
 	init();
@@ -87,6 +88,24 @@ void init(){
 	for (int i=0;i<8;i++){
 		setAngles[i] = PlanetArray[i].lon;
 	}
+}
+void splashScreen(){
+	lcdClear();
+	lcdDrawCircle(120,160, 10, Yellow, 1);	// Sun
+	for(int i=0; i<8; i++){
+		lcdDrawCircle(120,160, 20+i*10, LightGrey, 0);	// Planet Orbits
+	}
+	lcdDrawCircle(140,160, 10, Maroon, 1);	// Mercury
+	lcdDrawCircle(141,139, 10, Orange, 1);	// Venus
+	lcdDrawCircle(120,120, 10, Green, 1);		// Earth
+	lcdDrawCircle(85,125, 10, Red, 1);			// Mars
+	lcdDrawCircle(60,160, 10, Magenta, 1);	// Jupiter
+	lcdDrawCircle(170,110, 10, White, 1);		// Saturn
+	lcdDrawCircle(170,110, 14, White, 0);	// Saturn Ring
+	lcdDrawCircle(120,240, 10, Blue, 1);		// Uranus
+	lcdDrawCircle(184,224, 10, Navy, 1);		// Neptune
+	lcdPrintString(120,15,"ORRERY",arial_14pt,White,1);
+	wait_ms(2000);
 }
 
 void DateSelection(){
