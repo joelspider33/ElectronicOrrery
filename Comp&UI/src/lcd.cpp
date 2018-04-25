@@ -77,7 +77,7 @@ void readY(void){
 
 void PORTC_IRQHandler(void){
 	if(pos.flag==0 ){	// Skips if unhandled Touch Event is detected or interrupt triggered wrongly
-		wait_ms(50);								// Debounce touch
+		wait_ms(10);								// Debounce touch
     disableTouchInterrupt();
 		readX();										// Read X position of touch
 		readY();										// Read Y position of touch
@@ -198,7 +198,7 @@ void lcdReset(void){
   // SPI Setup
 
   spi.format(9,0);					// 9 bit, Mode 0 (polarity 0, phase 0)
-  spi.frequency(20000000);	// 10MHz Clock
+  spi.frequency(15000000);	// 10MHz Clock
 
   // Hardware Reset
   reset = 1;
