@@ -107,7 +107,7 @@ void splashScreen(){
 	lcdDrawCircle(191,231, 7, Navy, 1);		// Neptune
 	lcdPrintString(120,30,"ORRERY",arial_14pt,White,1);
 	lcdPrintString(120,280,"Developed By:",arial_10pt,White,1);
-	lcdPrintString(120,300,"J.Webb, J.Berriman, A.Patel",arial_10pt,White,1);
+	lcdPrintString(120,300,"J.Berriman,  A.Patel,  J.Webb",arial_10pt,White,1);
 	sleepUntilTouch();
 }
 
@@ -115,12 +115,12 @@ void DateSelection(){
 	Menu_DrawDateSelection(PlanetArray,date);
 	while(!isTouchInside(0,50,0,30)){
 		sleepUntilTouch();
-		if(isTouchInside(20,170,40,70)){
+		if(isTouchInside(20,170,40,70)){ // Change Date Button
 			ChangeDate();
 			double time = (double)(date[4]) + ((double)(date[5])/24.0);
 			getPlanetPos(PlanetArray,date[0],date[1],date[2],time);
 			Menu_DrawDateSelection(PlanetArray,date);
-		} else if(isTouchInside(180,220,40,70)){
+		} else if(isTouchInside(180,220,40,70)){ // Set angles button
 			float angles[8];
 			for (int i=0;i<8;i++){
 				angles[i] = PlanetArray[i].lon;
@@ -130,9 +130,11 @@ void DateSelection(){
 					setAngles[i] = angles[i];
 				}
 			}
-			Menu_DrawDateSelection(PlanetArray,date);
-		} else if(isTouchInside(20,220,70,90)){
+			Menu_DrawDateSelection(PlanetArray,date); // Get current date button
+		} else if(isTouchInside(20,220,70,100)){
 			readCurrentDate();
+			double time = (double)(date[4]) + ((double)(date[5])/24.0);
+			getPlanetPos(PlanetArray,date[0],date[1],date[2],time);
 			Menu_DrawDateSelection(PlanetArray,date);
 		}
 	}
@@ -168,176 +170,125 @@ void RemoteServerControl(){
 	}
 	char SSIDno;
 	i2c.read(InternetAddr<<1,&SSIDno,1);	// Read length of SSID's
-	struct SSID_struct SSID[20];
-	for(int i=0;i<SSIDno;i++){
-		i2c.read(InternetAddr<<1,SSID[i].ID,32);
-		i2c.read(InternetAddr<<1,&SSID[i].length,1);
-		i2c.read(InternetAddr<<1,&SSID[i].encryption,1);
-	}
-	char n=0;	// Scrolling index
-	for(int i=n;i<n+7;i++){
-		lcdPrintString(70,110+20*i,SSID[i].ID,arial_10pt,White,1);
-		switch(SSID[i].encryption){
-			case 1:
-				lcdPrintString(170,110+20*i,"Open",arial_10pt,White,1);
-				break;
-			case 2:
-				lcdPrintString(170,110+20*i,"WEP",arial_10pt,White,1);
-				break;
-			case 3:
-				lcdPrintString(170,110+20*i,"WPA",arial_10pt,White,1);
-				break;
-			case 4:
-				lcdPrintString(170,110+20*i,"WPA2",arial_10pt,White,1);
-				break;
-			default:
-				lcdPrintString(170,110+20*i,"-",arial_10pt,White,1);
+	if(SSIDno!=0xFF){ // 0xFF indicates ethernet connection
+		lcdPrintString(120,60,"WiFi",arial_10pt,White,1);
+		struct SSID_struct SSID[20];
+		for(int i=0;i<SSIDno;i++){
+			i2c.read(InternetAddr<<1,SSID[i].ID,32);
+			i2c.read(InternetAddr<<1,&SSID[i].length,1);
+			i2c.read(InternetAddr<<1,&SSID[i].encryption,1);
 		}
-	}
-	lcdPrintString(120,290,"Awaiting Password",arial_10pt,White,1);
-	Menu_UpArrow(220,100);
-	Menu_DownArrow(220,240);
-	char redraw = 0;
-	while(!isTouchInside(0,50,0,30)){
-		sleepUntilTouch();
+		char n=0;	// Scrolling index
+		for(int i=n;i<n+7;i++){
+			lcdPrintString(70,110+20*i,SSID[i].ID,arial_10pt,White,1);
+			switch(SSID[i].encryption){
+				case 1:
+					lcdPrintString(170,110+20*i,"Open",arial_10pt,White,1);
+					break;
+				case 2:
+					lcdPrintString(170,110+20*i,"WEP",arial_10pt,White,1);
+					break;
+				case 3:
+					lcdPrintString(170,110+20*i,"WPA",arial_10pt,White,1);
+					break;
+				case 4:
+					lcdPrintString(170,110+20*i,"WPA2",arial_10pt,White,1);
+					break;
+				default:
+					lcdPrintString(170,110+20*i,"-",arial_10pt,White,1);
+			}
+		}
+		lcdPrintString(120,290,"Awaiting Password",arial_10pt,White,1);
+		Menu_UpArrow(220,100);
+		Menu_DownArrow(220,240);
 
-		if(isTouchInside(220,240,100,120) && n+7<SSIDno){
-			n++;
-			redraw=1;
-		}
-		if(isTouchInside(220,240,240,260) && n>0){
-			n--;
-			redraw=1;
-		}
+		while(!isTouchInside(0,50,0,30)){
+			sleepUntilTouch();
 
-		for(int i=0; i<8; i++){
-			if (isTouchInside(20,220,100+i*20,120+i*20)){
-				char password[32];	// Passwords up to 32 characters allowed
-				Keyboard(password);
-				Menu_DrawRemoteServerControl();
-				lcdPrintString(120,290,"Checking Password",arial_10pt,White,1);
-				i2c.write(InternetAddr<<1,SSID[i+n].ID,32);
-				i2c.write(InternetAddr<<1,password,32);
-				wait_us(5);
-				i2c.read(InternetAddr<<1,&failure,1);
-				char* ptr;
-				if(!failure){	// 0x00 failure, 0x01 success
-					lcdDrawRect(20,280,220,300,LightGrey,1);
-					lcdPrintString(120,290,"Incorrect Password",arial_10pt,White,1);
-				} else{	// If connection is succesful then continuously poll.
-					lcdDrawRect(20,280,220,300,LightGrey,1);
-					lcdPrintString(120,290,"Polling Remote Server",arial_10pt,White,1);
-					while(!isTouchInside(0,50,0,30)){
-						timeout.attach(&nullISR,0.5);
-						sleep();
-						poll = 0;
+			if(isTouchInside(220,240,100,120) && n+7<SSIDno){
+				n++;
+			}
+			if(isTouchInside(220,240,240,260) && n>0){
+				n--;
+			}
+
+			for(int i=0; i<8; i++){
+				if (isTouchInside(20,220,100+i*20,120+i*20)){
+					char password[32];	// Passwords up to 32 characters allowed
+					Keyboard(password);
+					Menu_DrawRemoteServerControl();
+					lcdPrintString(120,290,"Checking Password",arial_10pt,White,1);
+					i2c.write(InternetAddr<<1,SSID[i+n].ID,32);
+					i2c.write(InternetAddr<<1,password,32);
+					wait_us(5);
+					i2c.read(InternetAddr<<1,&failure,1);
+					if(!failure){	// 0x00 failure, 0x01 success
 						lcdDrawRect(20,280,220,300,LightGrey,1);
+						lcdPrintString(120,290,"Incorrect Password",arial_10pt,White,1);
+					} else{	// If connection is succesful then send info and continuously poll.
+						lcdDrawRect(20,280,220,300,LightGrey,1);
+						lcdPrintString(120,290,"Polling Remote Server",arial_10pt,White,1);
+						// Send Current Angles
+						char bytearray[48];
+						uint8_t* p = (uint8_t *)setAngles;	// Create pointer looking for Bytes with address at start of float array
+						for(uint8_t i=0; i<32; i++){			// For all bytes 1-33
+							bytearray[i] = p[i];					// Copy bytes over in order to bytearray
+						}
+						// Send Current Date
+						sprintf(&bytearray[32],"%04i-%02i-%02i-%02i-%02i",date[0],date[1],date[2],date[3],date[4]);
+						i2c.write(InternetAddr<<1,bytearray,48);
+						while(!isTouchInside(0,50,0,30)){
+							timeout.attach(&nullISR,0.5);
+							sleep();
+							pollRemoteServer();
+						}
+						poll = 0xFF;
 						i2c.write(InternetAddr<<1,&poll,1);
-						i2c.read(InternetAddr<<1,&poll,1);
-						switch(poll){
-							case 0:
-								lcdPrintString(120,290,"Polling Remote Server",arial_10pt,White,1);
-								break;
+					}
+					// Redraw SSID interface
+					for(int i=n;i<n+7;i++){
+						lcdPrintString(70,110+20*i,SSID[i].ID,arial_10pt,White,1);
+						switch(SSID[i].encryption){
 							case 1:
-								lcdPrintString(120,290,"Server Input Date",arial_10pt,White,1);
-								char datestr[16];
-								i2c.read(InternetAddr,datestr,16);
-								int dateTemp[5];  // [YY,MM,DD,hh,mm]
-								ptr = &datestr[0];
-								for(int i=0; i<5; i++){
-									dateTemp[i] = strtol(ptr,&ptr,10);		// Store Date String as ints
-									ptr++;
-								}
-								if(checkDate(dateTemp)){
-									for(int i=0; i<5; i++){
-										date[i] = dateTemp[i];
-									}
-									lcdDrawRect(20,280,220,300,LightGrey,1);
-									lcdPrintString(120,290,"Converting Date to Planet Positions",arial_10pt,White,1);
-									double time = (double)(date[4]) + ((double)(date[5])/24.0);
-									getPlanetPos(PlanetArray,date[0],date[1],date[2],time);
-									lcdDrawRect(20,280,220,300,LightGrey,1);
-									lcdPrintString(120,290,"Setting Planet Positions",arial_10pt,White,1);
-									float angles[8];
-									for (int i=0;i<8;i++){
-										angles[i] = PlanetArray[i].lon;
-									}
-									if (SetAngles(angles,0xFF)){
-										for (int i=0; i<8; i++){
-											setAngles[i] = angles[i];
-										}
-									}
-								}
-								lcdDrawRect(20,280,220,300,LightGrey,1);
-								lcdPrintString(120,290,"Incorrect Date",arial_10pt,White,1);
+								lcdPrintString(170,110+20*i,"Open",arial_10pt,White,1);
 								break;
 							case 2:
-								lcdPrintString(120,290,"Server Input Angles",arial_10pt,White,1);
-								float angles[8];
-								ptr = (char*)angles;
-								i2c.read(InternetAddr<<1,ptr,32);
-								failure = 0;
-								for(int i =0; i<8; i++){
-									if(angles[i]>=360 || angles[i]<0){
-										failure = 1;
-									}
-								}
-								if(!failure){
-									if(SetAngles(angles,0xFF)){
-										for(int i=0;i<8;i++){
-											setAngles[i] = angles[i];
-										}
-										lcdDrawRect(20,280,220,300,LightGrey,1);
-										lcdPrintString(120,290,"Succesfully Set Angles",arial_10pt,White,1);
-									} else{
-										lcdDrawRect(20,280,220,300,LightGrey,1);
-										lcdPrintString(120,290,"Failed to Set Angles",arial_10pt,White,1);
-									}
-								} else{
-									lcdDrawRect(20,280,220,300,LightGrey,1);
-									lcdPrintString(120,290,"Set angles not within 0<x<360",arial_10pt,White,1);
-								}
+								lcdPrintString(170,110+20*i,"WEP",arial_10pt,White,1);
 								break;
 							case 3:
-								lcdPrintString(120,290,"Server Input Demo Mode",arial_10pt,White,1);
-								i2c.read(InternetAddr<<1,&poll,1);
-								if (SetDemoMode()){
-									lcdDrawRect(20,280,220,300,LightGrey,1);
-									lcdPrintString(120,290,"Succesfully Set Demo",arial_10pt,White,1);
-								} else{
-									lcdDrawRect(20,280,220,300,LightGrey,1);
-									lcdPrintString(120,290,"Failed to Set Demo",arial_10pt,White,1);
-								}
+								lcdPrintString(170,110+20*i,"WPA",arial_10pt,White,1);
 								break;
+							case 4:
+								lcdPrintString(170,110+20*i,"WPA2",arial_10pt,White,1);
+								break;
+							default:
+								lcdPrintString(170,110+20*i,"-",arial_10pt,White,1);
 						}
 					}
 				}
-				redraw=1;
 			}
 		}
-
-		if(redraw){
-			redraw=0;
-			for(int i=n;i<n+7;i++){
-				lcdPrintString(70,110+20*i,SSID[i].ID,arial_10pt,White,1);
-				switch(SSID[i].encryption){
-					case 1:
-						lcdPrintString(170,110+20*i,"Open",arial_10pt,White,1);
-						break;
-					case 2:
-						lcdPrintString(170,110+20*i,"WEP",arial_10pt,White,1);
-						break;
-					case 3:
-						lcdPrintString(170,110+20*i,"WPA",arial_10pt,White,1);
-						break;
-					case 4:
-						lcdPrintString(170,110+20*i,"WPA2",arial_10pt,White,1);
-						break;
-					default:
-						lcdPrintString(170,110+20*i,"-",arial_10pt,White,1);
-				}
-			}
+	}
+	else{ // Ethernet
+		lcdPrintString(120,60,"Ethernet",arial_10pt,White,1);
+		lcdDrawRect(20,280,220,300,LightGrey,1);
+		lcdPrintString(120,290,"Polling Remote Server",arial_10pt,White,1);
+		// Send Current Angles
+		char bytearray[48];
+		uint8_t* p = (uint8_t *)setAngles;	// Create pointer looking for Bytes with address at start of float array
+		for(uint8_t i=0; i<32; i++){			// For all bytes 1-33
+			bytearray[i] = p[i];					// Copy bytes over in order to bytearray
 		}
+		// Send Current Date
+		sprintf(&bytearray[32],"%04i-%02i-%02i-%02i-%02i",date[0],date[1],date[2],date[3],date[4]);
+		i2c.write(InternetAddr<<1,bytearray,48);
+		while(!isTouchInside(0,50,0,30)){
+			timeout.attach(&nullISR,0.5);
+			sleep();
+			pollRemoteServer();
+		}
+		poll = 0xFF;	// End connection with 0xFF packet
+		i2c.write(InternetAddr<<1,&poll,1);
 	}
 }
 
@@ -438,6 +389,7 @@ void ChangeDate(){
 
 		}
 	}
+	pos.flag=0;
 }
 void ChangeAngle(int p){
 	Menu_DrawChangeAngle();
@@ -661,6 +613,91 @@ bool readCurrentDate(){
 		return 1;
 	}
 	return 0;
+}
+void pollRemoteServer(){
+	char poll = 0;
+	char* ptr;
+	int failure;
+	lcdDrawRect(20,280,220,300,LightGrey,1);
+	i2c.write(InternetAddr<<1,&poll,1);
+	i2c.read(InternetAddr<<1,&poll,1);
+	switch(poll){
+		case 0:
+			lcdPrintString(120,290,"Polling Remote Server",arial_10pt,White,1);
+			break;
+		case 1:
+			lcdPrintString(120,290,"Server Input Date",arial_10pt,White,1);
+			char datestr[16];
+			i2c.read(InternetAddr,datestr,16);
+			int dateTemp[5];  // [YY,MM,DD,hh,mm]
+			ptr = &datestr[0];
+			for(int i=0; i<5; i++){
+				dateTemp[i] = strtol(ptr,&ptr,10);		// Store Date String as ints
+				ptr++;
+			}
+			if(checkDate(dateTemp)){
+				for(int i=0; i<5; i++){
+					date[i] = dateTemp[i];
+				}
+				lcdDrawRect(20,280,220,300,LightGrey,1);
+				lcdPrintString(120,290,"Converting Date to Planet Positions",arial_10pt,White,1);
+				double time = (double)(date[4]) + ((double)(date[5])/24.0);
+				getPlanetPos(PlanetArray,date[0],date[1],date[2],time);
+				lcdDrawRect(20,280,220,300,LightGrey,1);
+				lcdPrintString(120,290,"Setting Planet Positions",arial_10pt,White,1);
+				float angles[8];
+				for (int i=0;i<8;i++){
+					angles[i] = PlanetArray[i].lon;
+				}
+				if (SetAngles(angles,0xFF)){
+					for (int i=0; i<8; i++){
+						setAngles[i] = angles[i];
+					}
+				}
+			} else{
+				lcdDrawRect(20,280,220,300,LightGrey,1);
+				lcdPrintString(120,290,"Incorrect Date",arial_10pt,White,1);
+			}
+			break;
+		case 2:
+			lcdPrintString(120,290,"Server Input Angles",arial_10pt,White,1);
+			float angles[8];
+			ptr = (char*)angles;
+			i2c.read(InternetAddr<<1,ptr,32);
+			failure = 0;
+			for(int i =0; i<8; i++){
+				if(angles[i]>=360 || angles[i]<0){
+					failure = 1;
+				}
+			}
+			if(!failure){
+				if(SetAngles(angles,0xFF)){
+					for(int i=0;i<8;i++){
+						setAngles[i] = angles[i];
+					}
+					lcdDrawRect(20,280,220,300,LightGrey,1);
+					lcdPrintString(120,290,"Succesfully Set Angles",arial_10pt,White,1);
+				} else{
+					lcdDrawRect(20,280,220,300,LightGrey,1);
+					lcdPrintString(120,290,"Failed to Set Angles",arial_10pt,White,1);
+				}
+			} else{
+				lcdDrawRect(20,280,220,300,LightGrey,1);
+				lcdPrintString(120,290,"Set angles not within 0<x<360",arial_10pt,White,1);
+			}
+			break;
+		case 3:
+			lcdPrintString(120,290,"Server Input Demo Mode",arial_10pt,White,1);
+			i2c.read(InternetAddr<<1,&poll,1);
+			if (SetDemoMode()){
+				lcdDrawRect(20,280,220,300,LightGrey,1);
+				lcdPrintString(120,290,"Succesfully Set Demo",arial_10pt,White,1);
+			} else{
+				lcdDrawRect(20,280,220,300,LightGrey,1);
+				lcdPrintString(120,290,"Failed to Set Demo",arial_10pt,White,1);
+			}
+			break;
+	}
 }
 void I2CFailedInternet(){
 	errorLED=1;

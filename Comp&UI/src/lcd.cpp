@@ -196,9 +196,9 @@ void calibration(void){
 // Reset and Initialisation code taken from MI0283QT datasheet
 void lcdReset(void){
   // SPI Setup
-
   spi.format(9,0);					// 9 bit, Mode 0 (polarity 0, phase 0)
-  spi.frequency(15000000);	// 10MHz Clock
+  spi.frequency(1000000);	  // 1MHz Clock
+  wait_us(500);
 
   // Hardware Reset
   reset = 1;
@@ -211,6 +211,7 @@ void lcdReset(void){
 	// Software Reset
 	lcdcmd(0x01);		// Software reset command
 	wait_ms(5);
+
 	lcdcmd(0x28);		// Turn Display off for configuration
 
 	// Configuring
@@ -340,6 +341,10 @@ void lcdReset(void){
 
 	lcdSetOrientation(0);
   enableTouchInterrupt();
+
+  wait_ms(1);
+  spi.frequency(100000000);	// 100MHz Clock
+  wait_ms(1);
 }
 
 
