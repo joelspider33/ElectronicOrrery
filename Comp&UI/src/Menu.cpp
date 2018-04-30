@@ -116,7 +116,7 @@ void Menu_DrawRemoteServerControl(void){
   lcdDrawRect(20,280,220,300,LightGrey,1);
 }
 
-void Menu_DrawSettings(void){
+void Menu_DrawSettings(int sun){
  	lcdClear();
  	Menu_Topbar();
  	Menu_Back();
@@ -127,6 +127,10 @@ void Menu_DrawSettings(void){
  	lcdPrintString(120,120,"Toggle Sun",arial_14pt,White,1);   // Titles
   lcdDrawRect(20,150,220,190,DarkGreen,1);								  // Calibration Button
  	lcdPrintString(120,170,"Reset Planets",arial_14pt,White,1);   // Titles
+  lcdDrawRect(20,200,220,240,DarkGreen,1);								  // Keyboard Demo Button
+ 	lcdPrintString(120,220,"Keyboard Demo",arial_14pt,White,1);   // Titles
+  if(sun){lcdDrawRect(190,110,210,130,Yellow,1);
+	}else{lcdDrawRect(190,110,210,130,Black,1);}
 }
 
 void Menu_DrawChangeDate(void){
@@ -161,6 +165,7 @@ void DrawKeyboard(int type){ // 0-abc, 1-ABC, 2-Sym
   lcdDrawRect(30,190,210,210,DarkGreen,1);
   lcdDrawRect(20,210,220,230,DarkGreen,1);
   lcdDrawRect(20,230,50,250,DarkGreen,1);
+  lcdDrawRect(70,230,170,250,DarkGreen,1);
   // Draw Key Outlines
   // Draw Horizontal Lines
   for (int i=0; i<5; i++){
@@ -179,6 +184,8 @@ void DrawKeyboard(int type){ // 0-abc, 1-ABC, 2-Sym
   lcdDrawLine(50,230,50,250,LightGrey);
   lcdDrawLine(210,190,210,210,LightGrey);
   lcdDrawLine(220,210,220,230,LightGrey);
+  lcdDrawRect(70,230,170,250,LightGrey,0);
+
   // Print Characters
   const char KeyboardABC[37] = "1234567890QWERTYUIOPASDFGHJKLZXCVBNM";
   const char Keyboardabc[37] = "1234567890qwertyuiopasdfghjklzxcvbnm";

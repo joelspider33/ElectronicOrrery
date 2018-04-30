@@ -154,8 +154,8 @@ void calibration(void){
   lcdClear();
   lcdPrintString(120,140,"Calibration",arial_14pt,White,1);
   lcdPrintString(120,160,"Please Press Dots",arial_10pt,White,1);
-	lcdDrawCircle(36,48,5,Green,1);
-  wait_ms(500);
+  wait_ms(200);
+  lcdDrawCircle(36,48,5,Green,1);
   pos.flag = 0;
 	while(pos.flag==0){
     sleep();
@@ -165,8 +165,8 @@ void calibration(void){
 	calibReported[0].x = pos.x;
 	calibReported[0].y = pos.y;
 	lcdDrawCircle(36,48,5,Black,1);
+  wait_ms(200);
 	lcdDrawCircle(204,160,5,Green,1);
-  wait_ms(500);
   pos.flag = 0;
 	while(pos.flag==0){
     sleep();
@@ -176,8 +176,8 @@ void calibration(void){
 	calibReported[1].x = pos.x;
 	calibReported[1].y = pos.y;
 	lcdDrawCircle(204,160,5,Black,1);
+  wait_ms(200);
 	lcdDrawCircle(120,272,5,Green,1);
-  wait_ms(500);
   pos.flag = 0;
 	while(pos.flag==0){
     sleep();

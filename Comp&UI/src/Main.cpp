@@ -162,6 +162,7 @@ void EngineeringMode(){
 
 void RemoteServerControl(){
 	Menu_DrawRemoteServerControl();
+
 	char poll = 1;;
 	char failure = i2c.write(InternetAddr<<1,&poll,1);
 	if(failure){
@@ -293,19 +294,16 @@ void RemoteServerControl(){
 }
 
 void Settings(){
-	Menu_DrawSettings();
+	Menu_DrawSettings(sun);
 	while(!isTouchInside(0,50,0,30)){
 		sleepUntilTouch();
 		if (isTouchInside(20,220,50,90)){	// Calibration Button
 			calibration();
-			Menu_DrawSettings();
+			Menu_DrawSettings(sun);
 		} else if (isTouchInside(20,220,100,140)){	// Toggle Sun Button
 			sun = !sun;
-			if(sun){
-				lcdDrawRect(190,110,210,130,Yellow,1);
-			}else{
-				lcdDrawRect(190,110,210,130,Black,1);
-			}
+			if(sun){ lcdDrawRect(190,110,210,130,Yellow,1);
+			}else{ lcdDrawRect(190,110,210,130,Black,1);			}
 		} else if (isTouchInside(20,220,150,190)){	// Reset PLanets
 			lcdClear();
 			Menu_Topbar();
@@ -314,7 +312,12 @@ void Settings(){
 			lcdPrintString(120,200,"Please Align Planet Ring Channel Indicator",arial_10pt,White,1);
 			lcdPrintString(120,220,"Touch to continue",arial_10pt,White,1);
 			sleepUntilTouch();
-			Menu_DrawSettings();
+			Menu_DrawSettings(sun);
+		} else if (isTouchInside(20,220,200,240)){
+			char str[32];
+			Keyboard(str);
+			Menu_DrawSettings(sun);
+			pos.flag=0;
 		}
 	}
 }
@@ -463,7 +466,7 @@ void Keyboard(char* str){
 		lcdDrawRect(30,90,220,110,LightGrey,1);
 		lcdPrintString(30,90,buffer,arial_10pt,White,0);
 		sleepUntilTouch();
-		if(num<63){
+		if(stringPixelLength(buffer,arial_10pt)<180){
 			for(int i=0;i<10;i++){
 				if (isTouchInside(20+20*i,40+20*i,150,170)){
 					buffer[num] = keyboard[i];
@@ -479,10 +482,14 @@ void Keyboard(char* str){
 					num++;
 				}
 			}
-		}
-		for(int i=0;i<7;i++){
-			if(isTouchInside(50+20*i,70+20*i,210,230)){
-				buffer[num] = keyboard[i+29];
+			for(int i=0;i<7;i++){
+				if(isTouchInside(50+20*i,70+20*i,210,230)){
+					buffer[num] = keyboard[i+29];
+					num++;
+				}
+			}
+			if(isTouchInside(70,170,230,250)){
+				buffer[num] = ' ';
 				num++;
 			}
 		}

@@ -23,7 +23,7 @@ void Menu_PasswordEntry(void);
 void Menu_DrawKeyboard(void);
 void DrawKeyboard(int type);  // 0-abc, 1-ABC, 2-Symbols
 
-void Menu_DrawSettings(void);
+void Menu_DrawSettings(int sun);
 
 
 // Menu Drawing Functions and bitmaps
