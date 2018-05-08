@@ -309,6 +309,7 @@ void Settings(){
 			Menu_Topbar();
 			lcdPrintString(120,160,"Resetting Planets",arial_14pt,White,1);
 			init();
+			SetAngles(setAngles,0xFF);
 			lcdPrintString(120,200,"Please Align Planet Ring Channel Indicator",arial_10pt,White,1);
 			lcdPrintString(120,220,"Touch to continue",arial_10pt,White,1);
 			sleepUntilTouch();
@@ -463,7 +464,7 @@ void Keyboard(char* str){
 	buffer[0] = '_';
 	buffer[1] = '\0';
 	while(!isTouchInside(0,50,0,30)){
-		lcdDrawRect(30,90,220,110,LightGrey,1);
+		lcdDrawRect(30,90,220,110,DarkGrey,1);
 		lcdPrintString(30,90,buffer,arial_10pt,White,0);
 		sleepUntilTouch();
 		if(stringPixelLength(buffer,arial_10pt)<180){

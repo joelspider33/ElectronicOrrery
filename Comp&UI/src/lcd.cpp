@@ -25,7 +25,8 @@ int height = 320; // Globals representing size of display, changes with orientat
 int width = 240;
 
 // API Declaration
-SPI spi(PTD2,PTD3,PTD1,PTD0);
+SPI spi(PTD2,PTD3,PTD1);
+DigitalOut CS(PTD0);
 DigitalOut reset(PTC4);
 InterruptIn Xpos(PTC10);
 
@@ -195,9 +196,11 @@ void calibration(void){
 
 // Reset and Initialisation code taken from MI0283QT datasheet
 void lcdReset(void){
+  CS = 1;
   // SPI Setup
-  spi.format(9,0);					// 9 bit, Mode 0 (polarity 0, phase 0)
-  spi.frequency(1000000);	  // 1MHz Clock
+  spi.format(9,0);					  // 9 bit, Mode 0 (polarity 0, phase 0)
+  spi.frequency(10000000);	  // 10MHz Clock
+  CS = 0;
   wait_us(500);
 
   // Hardware Reset
@@ -341,10 +344,6 @@ void lcdReset(void){
 
 	lcdSetOrientation(0);
   enableTouchInterrupt();
-
-  wait_ms(1);
-  spi.frequency(100000000);	// 100MHz Clock
-  wait_ms(1);
 }
 
 

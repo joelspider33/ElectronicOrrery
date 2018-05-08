@@ -77,9 +77,9 @@ void Menu_DrawEngineeringMode(float setAngles[8]){
   Menu_Back();
   lcdPrintString(130,15,"Engineering Mode",arial_14pt,White,1);		// Title
   lcdDrawRect(20,50,115,260,DarkGrey,1);											    // Planet Box
-  lcdDrawRect(125,50,220,260,DarkGreen,1);												// Angle Box
-  lcdDrawRect(20,270,115,310,DarkGreen,1);												// Demo Mode Button
-  lcdDrawRect(125,270,220,310,DarkGreen,1);                       // Set Angle button
+  lcdDrawRect(125,50,220,100,DarkGrey,1);                         // Angle Title Box
+  lcdDrawRect(125,100,220,260,DarkGreen,1);												// Angle Box
+  lcdDrawRect(20,270,220,310,DarkGreen,1);												// Demo Mode Button
   for(int i=0; i<8;i++){
     lcdDrawRect(0,99+i*20,240,99+i*20,Black,1);
   }
@@ -93,8 +93,7 @@ void Menu_DrawEngineeringMode(float setAngles[8]){
   lcdPrintString(70,210,"Saturn",arial_10pt,White,1);
   lcdPrintString(70,230,"Uranus",arial_10pt,White,1);
   lcdPrintString(70,250,"Neptune",arial_10pt,White,1);
-  lcdPrintString(67,290,"Demo Mode",arial_10pt,White,1);
-  lcdPrintString(175,290,"Set Angle",arial_10pt,White,1);
+  lcdPrintString(120,290,"Demo Mode",arial_14pt,White,1);
   char buffer[5];
   for (int i=0;i<8;i++){
     sprintf(buffer,"%.1f",setAngles[i]);
@@ -153,7 +152,7 @@ void Menu_DrawKeyboard(void){
   Menu_Topbar();
   Menu_Back();
   lcdPrintString(130,15,"Keyboard",arial_14pt,White,1);
-  lcdDrawRect(20,50,220,140,LightGrey,1);
+  lcdDrawRect(20,50,220,140,DarkGrey,1);
   DrawKeyboard(0);
   lcdDrawRect(20,260,220,300,DarkGreen,1);
   lcdPrintString(120,280,"Confirm",arial_14pt,White,1);
