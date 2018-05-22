@@ -48,6 +48,7 @@ int main (void) {
 	powerLED=1;
 	busyLED=1;
 	errorLED=0;
+	sun=0;
 	lcdReset();														// LCD Display Setup
 	splashScreen();
 	calibration();												// Allows user to Calibrate Touchscreen
@@ -302,8 +303,9 @@ void Settings(){
 			Menu_DrawSettings(sun);
 		} else if (isTouchInside(20,220,100,140)){	// Toggle Sun Button
 			sun = !sun;
-			if(sun){ lcdDrawRect(190,110,210,130,Yellow,1);
-			}else{ lcdDrawRect(190,110,210,130,Black,1);			}
+			wait_us(100);
+			if(sun){lcdDrawRect(190,110,210,130,Yellow,1);
+			}else{lcdDrawRect(190,110,210,130,Black,1);}
 		} else if (isTouchInside(20,220,150,190)){	// Reset PLanets
 			lcdClear();
 			Menu_Topbar();
