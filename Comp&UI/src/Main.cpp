@@ -43,7 +43,6 @@ struct SSID_struct{
   Main function
  *----------------------------------------------------------------------------*/
 int main (void) {
-	pc.printf("Hello World!\n");
 	// Initialisation
 	powerLED=1;
 	busyLED=1;
@@ -55,7 +54,6 @@ int main (void) {
 	bluetooth.attach(&bluetooth_ISR);
 	// Initialise Variables
 	init();
-	pc.printf("Comp&UI Module Initialised\n");
 	Menu_DrawMainMenu();
 
   while (1) {
@@ -232,12 +230,14 @@ void RemoteServerControl(){
 						lcdPrintString(120,290,"Polling Remote Server",arial_10pt,White,1);
 						// Send Current Angles
 						char bytearray[48];
+
 						uint8_t* p = (uint8_t *)setAngles;	// Create pointer looking for Bytes with address at start of float array
 						for(uint8_t i=0; i<32; i++){			// For all bytes 1-33
 							bytearray[i] = p[i];					// Copy bytes over in order to bytearray
 						}
 						// Send Current Date
 						sprintf(&bytearray[32],"%04i-%02i-%02i-%02i-%02i",date[0],date[1],date[2],date[3],date[4]);
+
 						i2c.write(InternetAddr<<1,bytearray,48);
 						while(!isTouchInside(0,50,0,30)){
 							timeout.attach(&nullISR,0.5);
@@ -275,19 +275,43 @@ void RemoteServerControl(){
 		lcdPrintString(120,60,"Ethernet",arial_10pt,White,1);
 		lcdDrawRect(20,280,220,300,LightGrey,1);
 		lcdPrintString(120,290,"Polling Remote Server",arial_10pt,White,1);
+		wait_ms(500);
 		// Send Current Angles
 		char bytearray[48];
+		/*
+		char* arrayStart = bytearray;
+		struct TEST{
+			float planets[8];
+			char date[16];
+		} test;
+
+		//sets planet angles
+		for (int i = 0; i < 8; ++i) {
+			test.planets[i] = setAngles[i];
+		}
+		sprintf(test.date,"%04i-%02i-%02i-%02i-%02i",date[0],date[1],date[2],date[3],date[4]);
+		arrayStart = (char*)&test;
+		*/
 		uint8_t* p = (uint8_t *)setAngles;	// Create pointer looking for Bytes with address at start of float array
 		for(uint8_t i=0; i<32; i++){			// For all bytes 1-33
 			bytearray[i] = p[i];					// Copy bytes over in order to bytearray
 		}
 		// Send Current Date
 		sprintf(&bytearray[32],"%04i-%02i-%02i-%02i-%02i",date[0],date[1],date[2],date[3],date[4]);
+		lcdDrawRect(20,280,220,300,LightGrey,1);
+		lcdPrintString(120,290,&bytearray[32],arial_10pt,White,1);
+
 		i2c.write(InternetAddr<<1,bytearray,48);
+		lcdDrawRect(20,280,220,300,LightGrey,1);
+		lcdPrintString(120,290,"Sent All Data",arial_10pt,White,1);
+
 		while(!isTouchInside(0,50,0,30)){
 			timeout.attach(&nullISR,0.5);
-			sleep();
 			pollRemoteServer();
+			lcdDrawRect(20,280,220,300,LightGrey,1);
+			lcdPrintString(120,290,"Polled Remote Server",arial_10pt,White,1);
+			pos.flag=0;
+			sleep();
 		}
 		poll = 0xFF;	// End connection with 0xFF packet
 		i2c.write(InternetAddr<<1,&poll,1);
@@ -625,22 +649,36 @@ bool readCurrentDate(){
 	return 0;
 }
 void pollRemoteServer(){
+	struct rxInfo_t{
+		char date[16];
+		float angles[8];
+		char demo;
+	} rxInfo;
+
 	char poll = 0;
 	char* ptr;
 	int failure;
 	lcdDrawRect(20,280,220,300,LightGrey,1);
 	i2c.write(InternetAddr<<1,&poll,1);
 	i2c.read(InternetAddr<<1,&poll,1);
+	i2c.read(InternetAddr<<1,(char*)&rxInfo,49);
 	switch(poll){
 		case 0:
 			lcdPrintString(120,290,"Polling Remote Server",arial_10pt,White,1);
 			break;
 		case 1:
 			lcdPrintString(120,290,"Server Input Date",arial_10pt,White,1);
-			char datestr[16];
-			i2c.read(InternetAddr,datestr,16);
+			wait_ms(500);
+			// char datestr[16];
+			// i2c.read(InternetAddr,datestr,16);
+			char dateBuffer[17];
+			lcdDrawRect(20,280,220,300,LightGrey,1);
+			memcpy(dateBuffer, rxInfo.date, 16);
+			dateBuffer[16] = '\0';
+			lcdPrintString(120,290,dateBuffer,arial_10pt,White,1);
+			wait_ms(1000);
 			int dateTemp[5];  // [YY,MM,DD,hh,mm]
-			ptr = &datestr[0];
+			ptr = &rxInfo.date[0];
 			for(int i=0; i<5; i++){
 				dateTemp[i] = strtol(ptr,&ptr,10);		// Store Date String as ints
 				ptr++;
@@ -651,10 +689,12 @@ void pollRemoteServer(){
 				}
 				lcdDrawRect(20,280,220,300,LightGrey,1);
 				lcdPrintString(120,290,"Converting Date to Planet Positions",arial_10pt,White,1);
+				wait_ms(500);
 				double time = (double)(date[4]) + ((double)(date[5])/24.0);
 				getPlanetPos(PlanetArray,date[0],date[1],date[2],time);
 				lcdDrawRect(20,280,220,300,LightGrey,1);
 				lcdPrintString(120,290,"Setting Planet Positions",arial_10pt,White,1);
+				wait_ms(500);
 				float angles[8];
 				for (int i=0;i<8;i++){
 					angles[i] = PlanetArray[i].lon;
@@ -663,32 +703,53 @@ void pollRemoteServer(){
 					for (int i=0; i<8; i++){
 						setAngles[i] = angles[i];
 					}
+					Menu_DrawRemoteServerControl();
+					lcdPrintString(120,60,"Ethernet",arial_10pt,White,1);
+					lcdPrintString(120,290,"Planet Positions Set",arial_10pt,White,1);
+					wait_ms(500);
+				} else{
+					Menu_DrawRemoteServerControl();
+					lcdPrintString(120,60,"Ethernet",arial_10pt,White,1);
+					lcdPrintString(120,290,"Failed to Set Planet Positions",arial_10pt,White,1);
+					wait_ms(500);
 				}
+
 			} else{
 				lcdDrawRect(20,280,220,300,LightGrey,1);
 				lcdPrintString(120,290,"Incorrect Date",arial_10pt,White,1);
+				wait_ms(500);
 			}
 			break;
 		case 2:
 			lcdPrintString(120,290,"Server Input Angles",arial_10pt,White,1);
+			wait_ms(500);
+			/*
 			float angles[8];
 			ptr = (char*)angles;
 			i2c.read(InternetAddr<<1,ptr,32);
+			*/
+			lcdDrawRect(20,280,220,300,LightGrey,1);
+			char buffer[50];
+			sprintf(buffer,"%.2f,%.2f,%.2f,%.2f",rxInfo.angles[0],rxInfo.angles[1],rxInfo.angles[2],rxInfo.angles[3]);
+			lcdPrintString(120,290,buffer,arial_10pt,White,1);
+			wait_ms(2000);
 			failure = 0;
 			for(int i =0; i<8; i++){
-				if(angles[i]>=360 || angles[i]<0){
+				if(rxInfo.angles[i]>=360 || rxInfo.angles[i]<0){
 					failure = 1;
 				}
 			}
 			if(!failure){
-				if(SetAngles(angles,0xFF)){
+				if(SetAngles(rxInfo.angles,0xFF)){
 					for(int i=0;i<8;i++){
-						setAngles[i] = angles[i];
+						setAngles[i] = rxInfo.angles[i];
 					}
-					lcdDrawRect(20,280,220,300,LightGrey,1);
+					Menu_DrawRemoteServerControl();
+					lcdPrintString(120,60,"Ethernet",arial_10pt,White,1);
 					lcdPrintString(120,290,"Succesfully Set Angles",arial_10pt,White,1);
 				} else{
-					lcdDrawRect(20,280,220,300,LightGrey,1);
+					Menu_DrawRemoteServerControl();
+					lcdPrintString(120,60,"Ethernet",arial_10pt,White,1);
 					lcdPrintString(120,290,"Failed to Set Angles",arial_10pt,White,1);
 				}
 			} else{
@@ -698,11 +759,15 @@ void pollRemoteServer(){
 			break;
 		case 3:
 			lcdPrintString(120,290,"Server Input Demo Mode",arial_10pt,White,1);
-			i2c.read(InternetAddr<<1,&poll,1);
+			// i2c.read(InternetAddr<<1,&poll,1);
 			if (SetDemoMode()){
+				Menu_DrawRemoteServerControl();
+				lcdPrintString(120,60,"Ethernet",arial_10pt,White,1);
 				lcdDrawRect(20,280,220,300,LightGrey,1);
 				lcdPrintString(120,290,"Succesfully Set Demo",arial_10pt,White,1);
 			} else{
+				Menu_DrawRemoteServerControl();
+				lcdPrintString(120,60,"Ethernet",arial_10pt,White,1);
 				lcdDrawRect(20,280,220,300,LightGrey,1);
 				lcdPrintString(120,290,"Failed to Set Demo",arial_10pt,White,1);
 			}
